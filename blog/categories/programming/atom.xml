@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Automatic Coding]]></title>
   <link href="http://rdallasgray.github.io/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://rdallasgray.github.io/"/>
-  <updated>2013-05-16T20:20:29+01:00</updated>
+  <updated>2013-06-09T21:29:09+01:00</updated>
   <id>http://rdallasgray.github.io/</id>
   <author>
     <name><![CDATA[Robert Dallas Gray]]></name>
@@ -12,6 +12,235 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[What's wrong with JavaScript]]></title>
+    <link href="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/"/>
+    <updated>2013-06-09T14:11:00+01:00</updated>
+    <id>http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript</id>
+    <content type="html"><![CDATA[<p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I'm
+an advocate for JavaScript. Well, I have more time for the language
+than many Rubyists seem to: it has a nicely compact API and, once
+you've learned to avoid the potholes, it's an easy language to get
+things done in. CoffeeScript makes it considerably less painful to
+read and write, and the Node ecosystem is generating some very useful
+toolsets and ways of working.</p>
+
+<p>There are, though, some significant pain-points involved in writing
+non-trivial programs in JavaScript. Some of them are well-covered in
+the literature already, but there are some that seem not to be. I'm
+interested to gauge the extent to which others have come up against some
+of these, so here's my take on what's <em>really</em> wrong with JavaScript.</p>
+
+<h2>The obvious stuff</h2>
+
+<p>I'm not going to dwell on any of this, because it's <a href="http://javascript.crockford.com/survey.html">well-trodden territory</a>,
+but to get it out of the way: the scoping is wacky (and the <code>var</code> trap
+is a disaster); the comparison operators (<code>==</code> vs <code>===</code>) are a kludge;
+and the treatment of the <code>this</code> keyword is tiresome. There are many
+more dark corners (see, for instance, <a href="http://www.youtube.com/watch?v=kXEgk1Hdze0">Gary Bernhardt's WAT</a>), but all
+of these issues can be worked around more or less easily (and in fact
+CoffeeScript largely does so). There are other issues with the
+language that I'd argue are harder to deal with -- in some cases,
+practically impossible.</p>
+
+<h2>What is an object?</h2>
+
+<p>So, famously, JavaScript is not a class-based language. It uses
+prototypal inheritance. This is a somewhat simpler type of
+object-oriented language design, whereby object instances inherit both data and
+behaviour from other object instances. It can work quite well (it's a
+very memory-efficient system if used properly), and it can to some
+extent be used to mimic class-based inheritance if that's what you
+want. The problem with JavaScript, though, is what it uses for
+'objects'.</p>
+
+<p>In JavaScript, an 'object' is effectively just a hashtable. It is what
+in other languages is called a hash, a map or a dictionary -- a simple key:value
+arrangement. It looks like this:</p>
+
+<p>```javascript
+var obj = {</p>
+
+<pre><code>foo: "I'm a property!",
+bar: function() {
+    return "And I'm a method!"
+},
+baz: function() {
+    return this.bar();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>We could either use this object as-is, in which case it's what in a
+class-based language we'd call a Singleton, or we can use it as the
+prototype for another object instance (there are several ways to
+accomplish this -- they're covered elsewhere, so I won't expand).</p>
+
+<p>As you can see, there's no distinction between a 'method' (a member of
+the hash which is a function) and a 'property'. Everything is just a
+value indexed on a key of the hashtable. Nice and simple, but take a
+CoffeeScript instance method like this one:</p>
+
+<p><code>coffeescript
+thing: -&gt;
+  @thing ?= new Thing
+</code></p>
+
+<p>This looks pretty and idiomatic: it's an accessor method which
+assigns <code>@thing</code> if it doesn't already exist, then returns it.
+See the problem?</p>
+
+<p>CoffeeScript's syntax is hiding the fact that we've bound the instance
+variable to the same key as the method (<code>this.thing</code>). I hope this
+seems obvious to you, and that you're wondering how anyone could be so
+stupid as to do such a thing. I am here to tell you that this is
+something that a busy developer will do (especially one familiar with
+Ruby), and that it will then manifest a very subtle bug which does not
+immediately show up in unit tests. I will leave you to speculate as to
+how I can be so sure about this.</p>
+
+<p>Now, sure, we could be sensible and create <code>setThing</code> and <code>getThing</code>
+methods, but, you know, we're not writing Java. We're in a highly
+dynamic language. We want nice things. Or, we could create setters and
+getters using the
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/get">new ES5 syntax</a>
+-- but that's not available everywhere (pre-IE9, for instance), and, I
+would argue, is too unwieldy to apply as a rule.</p>
+
+<p>So what we're left with is doing something like:</p>
+
+<p><code>coffeescript
+thing: -&gt;
+  @_thing ?= new Thing
+</code></p>
+
+<p>Which is ... irritating. But if we want this kind of method syntax,
+that's what we have to do, and we have to be vigilant that we don't
+introduce mistakes like the above, because no lint tool will catch them.</p>
+
+<p>It's tempting to presume that this is a 'feature' of prototypal
+inheritance; it's not. The two next best-known prototypal languages,
+<a href="http://selflanguage.org/_static/tutorial/Language/ObjectsAndSlots/ObjectsAndSlots.html">Self</a> and <a href="http://www.lua.org/pil/16.html#ObjectSec">Lua</a>, distinguish properties and methods just fine.</p>
+
+<h2>Everything is an object</h2>
+
+<p>And that's a good thing, right?</p>
+
+<p>Well, first, it's not really true of JavaScript: you need to <a href="http://blogs.adobe.com/webplatform/2012/08/27/javascript-types/">'box'</a>
+primitives like numbers to get them to behave like objects, but fair
+enough, many languages do something similar. Second, and more
+importantly, see above as regards what objects in JavaScript <em>actually
+are</em>. What we're really saying is 'everything is a hashtable'. Is that
+a good thing?</p>
+
+<p>No. It isn't. Imagine another hypothetical CoffeeScript method:</p>
+
+<p>```coffeescript
+copyObject: (inputObject) ->
+  copy = []
+  for key, val of inputObject</p>
+
+<pre><code>copy.key = val
+</code></pre>
+
+<p>```</p>
+
+<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code>
+to an array rather than a hash. The really bad news? <em>This method will work
+almost as if it were correct</em>. We can get every key of <code>inputObject</code>
+on <code>copy</code> correctly, because an array, in JavaScript, <em>is just a
+hashtable</em>. We can set (pretty much) any key on it we like, and get it
+back intact. But again, subtle bugs abound; arrays are not intended to
+be used like this, and things will go wrong if, for example, you start
+trying to iterate over <code>copy</code>'s properties, expecting it to be a hash.</p>
+
+<p>Ouch.</p>
+
+<h2>Nothing is an object</h2>
+
+<p>Try this, in a CoffeeScript class:</p>
+
+<p>```coffeescript
+bindClick: ->
+  $("#clickable").on "click", @onClick</p>
+
+<p>respondToClick: ->
+  window.alert "clicked!"</p>
+
+<p>onClick: ->
+  @respondToClick()
+```</p>
+
+<p>So presuming <code>bindClick</code> has been called, what happens when we click
+on <code>"#clickable"</code>?</p>
+
+<p><code>respondtoClick</code> will never be called, and you'll almost certainly get
+an exception. Remember, there are no methods in Javascript, only
+functions. We bound the function <code>this.onClick</code> to the click event;
+that function has no idea that it's also a method. Why should a value
+in a hashtable know which hashtable it belongs to? In the context of
+the function <code>this.onClick</code>, <code>this</code> is the function itself or,
+sometimes, the <code>window</code> object. Neither of these has a
+<code>respondToClick</code> method, so we get an exception.</p>
+
+<p>In short, we can call any function in scope, from anywhere, regardless of
+whether it's part of an 'object'; and attaching a function to an object as
+a method only binds <code>this</code> correctly <em>when the function is called in
+the context of its parent object</em>.</p>
+
+<p>The correct way to do the above is of course:</p>
+
+<p><code>coffeescript
+bindClick: -&gt;
+  $("#clickable").on "click", =&gt; @respondToClick()
+</code></p>
+
+<p>We pass an anonymous function to <code>.on</code>, explicitly binding <code>this</code> to
+our current context using CoffeeScript's <code>=&gt;</code> operator.</p>
+
+<h2>_missing</h2>
+
+<p>All of the above can be worked around or avoided; at
+present, one very important thing can't be. JavaScript has no
+equivalent to <a href="http://ruby-doc.org/core-2.0/BasicObject.html#method-i-method_missing">Ruby's <code>method_missing</code></a>, <a href="http://c2.com/cgi/wiki?DoesNotUnderstand">Smalltalk's
+<code>doesNotUnderstand</code></a>, <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtForwarding.html">Objective-C's <code>forwardInvocation</code></a>, <a href="http://php.net/manual/en/language.oop5.overloading.php">PHP's <code>__call</code></a>,
+etcetera. You can't catch a call to an undefined method in JavaScript
+and then do something with it. This is, again, to do with the fact
+that there's nothing to distinguish 'properties' from 'methods' in
+JavaScript; plenty of 'properties' won't be callable as functions, but
+that doesn't necessarily mean they <em>should be</em>.</p>
+
+<p>It's important to be able to do this in traditional object-oriented
+design; we need it to do proper <a href="http://en.wikipedia.org/wiki/Delegation_(programming">delegation</a>), for example. It's also a
+tremendously convenient feature if you want to do metaprogramming
+(e.g. adding properties or methods to an object dynamically at
+runtime). There are two ways to sort-of do it right now: one is
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/noSuchMethod">Mozilla's <code>__noSuchMethod__</code></a>, which is only supported in SpiderMonkey
+and likely to be deprecated; the other is the 'official' ECMAScript
+proposal, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy?redirectlocale=en-US&amp;redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FProxy">Proxy</a>, which is characteristically circuitous and
+counterintuitive. It can be <a href="http://stackoverflow.com/questions/10665892/enable-harmony-proxies-in-nodejs">turned on in V8</a> (and thus in Node), but
+you'd be pretty far out on a limb to use it.</p>
+
+<h2>Finally</h2>
+
+<p>JavaScript was designed in a hurry, and it wasn't designed
+to build large, long-lived, maintainable applications. The fact that
+people are using it to do so is a testament to the ingenuity of
+serious JavaScript users, and their insight that what JavaScript
+<em>does</em> offer makes the failings tolerable.</p>
+
+<p>They are significant failings, though. I've yet to hear anyone
+convincingly argue that JavaScript's version of OOP offers anything in
+addition to or distinction from more traditional versions; it's a kind
+of Heisenbergian OOP, which breaks down as soon as you stop pretending
+it's there. Similarly, I'm not convinced that the changes being made
+(and proposed) are the right ones. They make the language seem more
+complex -- and this is a language whose simplicity is its virtue.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mod Lang]]></title>

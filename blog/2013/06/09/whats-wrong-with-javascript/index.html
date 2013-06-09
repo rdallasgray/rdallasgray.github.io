@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Automatic Coding</title>
+  <title>What's wrong with JavaScript - Automatic Coding</title>
   <meta name="author" content="Robert Dallas Gray">
 
   
@@ -20,7 +20,7 @@ than many Rubyists seem to: it has &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rdallasgray.github.io">
+  <link rel="canonical" href="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Automatic Coding" type="application/atom+xml">
@@ -65,15 +65,12 @@ than many Rubyists seem to: it has &hellip;">
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/06/09/whats-wrong-with-javascript/">What&#8217;s wrong with JavaScript</a></h1>
+      <h1 class="entry-title">What's wrong with JavaScript</h1>
     
     
       <p class="meta">
@@ -91,14 +88,14 @@ than many Rubyists seem to: it has &hellip;">
 
 <time datetime="2013-06-09T14:11:00+01:00" pubdate data-updated="true">Jun 9<span>th</span>, 2013</time>
         
-         | <a href="/blog/2013/06/09/whats-wrong-with-javascript/#disqus_thread">Comments</a>
+         | <a href="#disqus_thread">Comments</a>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I&#8217;m
+<div class="entry-content"><p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I&#8217;m
 an advocate for JavaScript. Well, I have more time for the language
 than many Rubyists seem to: it has a nicely compact API and, once
 you&#8217;ve learned to avoid the potholes, it&#8217;s an easy language to get
@@ -341,281 +338,16 @@ it&#8217;s there. Similarly, I&#8217;m not convinced that the changes being made
 (and proposed) are the right ones. They make the language seem more
 complex &#8211; and this is a language whose simplicity is its virtue.</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/05/11/mod-lang/">Mod Lang</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">Robert Dallas Gray</span></span>
 
-<time datetime="2013-05-11T15:43:00+01:00" pubdate data-updated="true">May 11<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/05/11/mod-lang/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>It occurred to me this week that CoffeeScript is Javascript <strong>with
-modern syntax</strong>. The thought appeared unprompted, and I&#8217;m not writing here to
-argue that it&#8217;s right or wrong; more that the <em>thought itself</em> gave me
-pause for thought.</p>
-
-<p>It made me realise that somewhere in my programming brain I was
-differentiating between &#8216;old world&#8217; and &#8216;new world&#8217; syntactic
-features, and the more I thought, the more interesting the thought
-was.</p>
-
-<p>So the reason I <em>am</em> writing here is to try to examine what it was
-about CoffeeScript that prompted the thought, by presenting some
-syntactic features that, to me, feel &#8216;modern&#8217;. I&#8217;ll also try to explain why
-I think each feature belongs in a modern language.</p>
-
-<h2>1. Stabby Lambdas</h2>
-
-<p>The obvious number 1. CoffeeScript&#8217;s lambda syntax uses the form
-<code>(arguments) -&gt; body</code>. The style is probably derived from
-<a href="http://www.haskell.org/haskellwiki/Anonymous_function">Haskell</a>;
-<a href="http://www.erlang.org/doc/getting_started/seq_prog.html#id61265">Erlang</a>
-also uses it, and it&#8217;s more recently been adopted by
-<a href="http://www.scala-lang.org/node/133">Scala</a>,
-<a href="http://msdn.microsoft.com/en-us/library/bb397687.aspx">C#</a> and (in a
-slightly backwards form)
-<a href="http://pragdave.blogs.pragprog.com/pragdave/2008/05/new-lambda-synt.html">Ruby</a>.</p>
-
-<p>What this says about language evolution is obvious, I think:
-programmers want to use anonymous functions. They want to create them
-quickly and easily, with a meaningful and noise-free syntax. I&#8217;d
-suggest that this is evidence of the current popularity of functional
-programming style, which is probably a result of the emerging
-necessity to program for concurrency. I&#8217;d also venture that most
-programmers using this style are interested less in concurrency
-(at the hardware level) than in a convenient syntax for working
-with event-driven systems (as well as a language-level
-<a href="http://en.wikipedia.org/wiki/Strategy_pattern">Strategy pattern</a>).</p>
-
-<h2>2. Noise Reduction</h2>
-
-<p>CoffeeScript makes parentheses optional in many cases (as does Ruby);
-it also, in certain cases, makes braces for declaring object literals optional; commas
-separating object key-value pairs and array elements can be replaced
-with newlines; semicolons as line delimiters are not used; comparison and
-logical operators can in many cases be replaced with equivalent
-English words (<code>===</code> with <code>is</code>, <code>!==</code> with <code>isnt</code>, <code>&amp;&amp;</code> with <code>and</code>,
-<code>||</code> with <code>or</code>, etc.).</p>
-
-<p>To the same effect, CoffeeScript, like Ruby, offers flexibility in
-conditional expressions, so that <code>unless</code> can be used in place of <code>if
-not</code>, and any conditional operator can be used postfix, allowing
-<em>bon mots</em> like <code>return unless x is 5</code>.</p>
-
-<p>This makes the language <em>easy to read</em>. It reads fluently,
-uninterrupted by messy, alienating punctuation. Sometimes this visual
-clarity is bought at the expense of semantic clarity, though, and the
-CoffeeScript compiler <a href="http://jameswilliams.be/blog/entry/202">can</a>
-<a href="http://ceronman.com/2012/09/17/coffeescript-less-typing-bad-readability/">bite</a>
-<a href="http://tapestryjava.blogspot.co.uk/2012/08/coffeescript-cautions.html">you</a>
-if you&#8217;re too <em>laissez-faire</em>. Also, how to &#8216;phrase&#8217; your code becomes
-an additional, and possibly unwelcome, decision. Rubyists have long
-faced these issues, and adherence to the language&#8217;s
-<a href="http://stackoverflow.com/questions/613985/common-ruby-idioms">idioms</a>
-is now nearly as important as correct syntax.</p>
-
-<p>The movement to greater flexibility and fewer sigils seems to have met
-with more approval than hostility, though, and I&#8217;d argue that a
-driving reason for this is that less noisy, more malleable syntax
-<strong>enables the creation of domain-specific languages</strong>. Rails famously
-leverages Ruby&#8217;s syntax to create what amounts to a declarative
-language to describe things like entity relationships; other
-frameworks have tried to follow suit and been frustrated by their host
-language&#8217;s lack of flexibility. I won&#8217;t name names.</p>
-
-<h2>3. Expressiveness through Expressions</h2>
-
-<p>In CoffeeScript, As in
-<a href="http://www.ruby-doc.org/docs/ProgrammingRuby/html/tut_expressions.html">Ruby</a>, <a href="http://twitter.github.io/scala_school/basics.html#expressions">Scala</a>, <a href="http://ocaml.org/tutorials/structure_of_ocaml_programs.html">OCaml</a>, <a href="http://www.haskell.org/haskellwiki/A_brief_introduction_to_Haskell#Expressions">Haskell</a> and <a href="http://en.wikipedia.org/wiki/S-expression">Lisp</a>, (almost)
-<strong>everything is an expression</strong>. In simple terms, this means that
-<em>every language construct returns a value</em>. An important consequence of
-this is <em>implicit returns</em>: because every construct must return a
-value, all functions must return a value, whether <code>return</code> is called
-explicitly or not. By default, a function returns the value of the
-last evaluated expression. This, again, makes for a very concise and
-expressive syntax, which feels like a function just <em>is</em> its evaluated
-body:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">square = </span><span class="nf">(x) -&gt;</span> <span class="nx">x</span> <span class="o">*</span> <span class="nx">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This applies to conditionals too:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">x = </span><span class="k">if</span> <span class="kc">true</span>
-</span><span class='line'>  <span class="mi">5</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>(Note that this is not &#8216;idiomatic&#8217; CoffeeScript.)</p>
-
-<h2>4. Coalescence</h2>
-
-<p>Like Scheme, <a href="http://eddiema.ca/2010/07/07/the-null-coalescing-operator-c-ruby-js-python/">C#, Ruby, Python and JavaScript</a>, CoffeeScript uses
-<em>coalescing operators</em>. To JavaScript&#8217;s coalescing <code>||</code> and <code>||=</code>,
-CoffeeScript adds a coalescing existential operator, <code>?</code> and <code>?=</code>. This is
-particularly useful in combination with the &#8216;everything is an
-expression&#8217; behaviour described above:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">x = </span><span class="p">(</span><span class="nx">y</span> <span class="k">if</span> <span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">or</span> <span class="nx">z</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>It can also be used for simple memoization:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">x = </span><span class="kc">null</span>
-</span><span class='line'><span class="nx">x</span> <span class="o">?=</span> <span class="nf">-&gt;</span> <span class="p">(</span><span class="nx">i</span> <span class="k">for</span> <span class="nx">i</span> <span class="k">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">..</span><span class="mi">20</span><span class="p">])</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>And even to conditionally call a function:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">f = </span><span class="nf">(callback) -&gt;</span> <span class="nx">callback</span><span class="o">?</span><span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Modern?</h2>
-
-<p>You may have noticed that most of the languages I&#8217;ve mentioned above
-are some distance from &#8216;modern&#8217;;
-<a href="http://en.wikipedia.org/wiki/Scala_(programming_language#History">Scala (released 2003)</a>
-has the best claim. The others range from early adulthood
-(<a href="http://en.wikipedia.org/wiki/Ruby_(programming_language#History">Ruby, mid-1990s</a>)
-to spry seniority
-(<a href="http://en.wikipedia.org/wiki/Lisp_(programming_language#History">Lisp, late 1950s</a>). Why
-do aspects of their syntaxes, then, seem to contribute to a sense of
-modernity in language design?</p>
-
-<p>I think this is quite simple: they don&#8217;t look, or act, too much like
-C.</p>
-
-<p>C is a beautiful language, which does what it&#8217;s designed for very
-well: it
-<a href="http://en.wikipedia.org/wiki/Von_Neumann_programming_languages">interacts with von Neumann-architecture machines</a>
-at a level appreciably higher than assembly language, whilst being
-highly performant, small, well-specified, and clear. But it became so
-popular that the languages that followed it were pretty much
-<em>required</em> to cargo-cult its syntax. What is Java but a traduction of
-Smalltalk with C-like syntax bolted on? What is JavaScript but a
-traduction of Scheme with Java-like syntax bolted on
-(<a href="http://www.quirksmode.org/js/intro.html">by mandate</a>, in this case)?</p>
-
-<p>As a result of C&#8217;s (and its successors&#8217;) popularity, alternative
-languages like Lisp and Smalltalk rather faded into the background;
-their practical elements were absorbed, but their syntaxes were
-repressed. One could argue that Perl brought some of their syntactic
-ideas closer to the mainstream &#8211; I don&#8217;t know enough Perl to have an
-opinion. But once you&#8217;ve written Ruby or Python or CoffeeScript,
-all of them strongly influenced by more <em>humanist</em> languages like the
-aforementioned, it&#8217;s hard to justify another set of braces, another
-check for <code>null</code>, another <code>for i = 0;</code>. And there you are. Old world:
-C. New world: not C.</p>
-
-<h2>Sundries</h2>
-
-<p>The above is a small selection of things I want from a &#8216;modern&#8217;
-language. Others might be (not in strict order):</p>
-
-<ul>
-<li><strong>Docstrings</strong>. As an Emacs user, I&#8217;m a total convert to the idea
-that a language should facilitate
-<a href="http://www.gnu.org/software/emacs/manual/html_node/elisp/Documentation-Basics.html">self-documenting programs</a>. <a href="http://ashkenas.com/literate-coffeescript/">Literate CoffeeScript</a>
-is a welcome move, but I miss being able to describe method
-parameters and return values in a defined way. The Emacs Lisp
-compiler complains if you don&#8217;t document a function, mentioning the
-params in order; this should be the norm.</li>
-<li><a href="http://en.wikipedia.org/wiki/List_comprehension">Comprehensions</a>
-are a very handy construct. I wish CoffeeScript would introduce
-<a href="https://github.com/jashkenas/coffee-script/issues/467">object comprehensions</a>,
-though.</li>
-<li><strong>Keyword
-arguments</strong>. <a href="http://docs.python.org/release/1.5.1p1/tut/keywordArgs.html">Python can do it</a>,
-<a href="http://brainspec.com/blog/2012/10/08/keyword-arguments-ruby-2-0/">Ruby is on board</a>,
-and you can
-<a href="http://blog.carbonfive.com/2011/09/28/destructuring-assignment-in-coffeescript/">kind of fake it in CoffeeScript</a>,
-using destructuring assignment. The king, of course, is Smalltalk,
-with its
-<a href="http://www.jmcsweeney.co.uk/computing/m206/messages.php">selectors</a>
-&#8211; effectively polymorphic method signatures enhanced by keyword
-arguments. In Smalltalk, the selector <code>setRed:Green:AndBlue:</code> points
-to a different method than <code>setRed:</code> or <code>setRed:AndGreen:</code>. Ruby
-2.0&#8217;s syntax strikes a nice balance, allowing arbitrary arguments in
-addition to keyworded ones.</li>
-</ul>
-
-
-<h2>Finally</h2>
-
-<p>Again, I&#8217;m not arguing what a &#8216;modern&#8217; language <em>should</em> look like so
-much as observing my own prejudice; also, I&#8217;m well aware that there
-are horses for courses, and new(ish) languages like
-<a href="http://code.google.com/p/go/">Go</a> and
-<a href="http://www.rust-lang.org">Rust</a> are intended for different purposes
-than Ruby or CoffeeScript.</p>
-
-<p>I think it&#8217;s all to play for at the moment; and I think it&#8217;ll be a
-shame if yet another C-like language wins. My money <em>was</em> on Scala as
-a general purpose application developers&#8217; language, but I fear it&#8217;s
-getting a bit
-<a href="http://www.joelonsoftware.com/articles/fog0000000018.html">astronautical</a>. JavaScript
-is highly optimised, and has a (reasonably)
-<a href="https://github.com/melor/node-posix">POSIX compliant host environment</a>
-&#8211; can we now consider using it for systems programming? And Ruby
-seems to be becoming the
-<a href="http://saviorodrigues.wordpress.com/2011/01/28/rethinking-rubys-role-in-the-cloud/">language of the Cloud</a>. Perhaps
-we are doomed to, or blessed with, a pluralistic future.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/27/async-sequences-using-jquery-dot-deferred/">Async sequences using jQuery.Deferred</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -627,104 +359,44 @@ we are doomed to, or blessed with, a pluralistic future.</p>
   
 
 
-<time datetime="2013-04-27T12:18:00+01:00" pubdate data-updated="true">Apr 27<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/27/async-sequences-using-jquery-dot-deferred/#disqus_thread">Comments</a>
-        
-      </p>
+<time datetime="2013-06-09T14:11:00+01:00" pubdate data-updated="true">Jun 9<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/programming/'>programming</a>
+  
+</span>
+
+
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>At work, I&#8217;ve been coding on a project which has to wrangle a lot of
-asynchronous processes. At first, I stuck with the Node.js convention
-of using callbacks accepting <code>(error, data)</code> arguments, but I found
-that tended to make the code a little circuitous. As the project
-in question would largely be used on the front-end, I didn&#8217;t feel I
-really had to stick to those conventions, so I looked into
-<a href="http://api.jquery.com/category/deferred-object/">jQuery&#8217;s Deferred object</a>,
-and especially its use of <a href="http://api.jquery.com/promise/">promises</a>.</p>
-
-<p>This isn&#8217;t a post about promises, so I won&#8217;t go too deeply into what
-they are, but suffice to say they offer an alternative way to manage
-asynchrony, with an arguably cleaner syntax; the <code>Deferred</code> object
-also simplifies chaining asynchronous functions, and provides a way to
-signal when a group of functions has completed (when their <code>deferred</code>s
-have <code>resolve</code>d, in the parlance). This is
-<a href="http://api.jquery.com/jQuery.when/">jQuery.when</a>.</p>
-
-<p><code>when</code> is very useful; you pass it some functions (each of which must call
-<code>Deferred.resolve</code> on completion), and it tells you when they&#8217;re all
-complete. Only problem is that the functions are called in
-parallel. Now, as a default behaviour, this makes perfect sense: we
-are talking about asynchrony after all. But in some cases, we want to
-ensure that our functions execute in a particular sequence, each
-function awaiting the completion of its
-predecessor. <code>jQuery.Deferred</code>, so far as I was able to find out,
-doesn&#8217;t provide for such a use case.</p>
-
-<p>There are of course other libraries which <em>do</em> &#8211;
-<a href="https://github.com/caolan/async">Async.js</a>, for example &#8211; but I&#8217;d
-thrown in my lot with jQuery, and I was reluctant to import a
-whole library for just this small and apparently simple piece of
-functionality.</p>
-
-<p>Now, at work, we&#8217;re lucky enough to be using
-<a href="http://coffeescript.org">CoffeeScript</a> for almost all our
-Javascript-y business, and the solution to my problem turned out to be
-quite a beautiful little five-liner:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">sequence = </span><span class="nf">(tasks) -&gt;</span>
-</span><span class='line'>  <span class="nv">seq = </span><span class="nx">tasks</span><span class="p">[</span><span class="mi">0</span><span class="p">]()</span>
-</span><span class='line'>  <span class="k">for</span> <span class="nx">task</span><span class="p">,</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">tasks</span><span class="p">[</span><span class="mi">1</span><span class="p">..]</span>
-</span><span class='line'>    <span class="nv">seq = </span><span class="nx">do</span> <span class="nf">(i) -&gt;</span> <span class="nx">seq</span><span class="p">.</span><span class="nx">then</span> <span class="nf">-&gt;</span> <span class="nx">tasks</span><span class="p">[</span><span class="nx">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]()</span>
-</span><span class='line'>  <span class="nx">seq</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>So, what&#8217;s happening here? Well, we pass an array of tasks (functions
-which implement <code>Deferred.resolve</code>, and return a <code>promise</code>) to <code>sequence</code>. Sequence then
-executes the <em>first</em> task, and iterates over the rest, each time
-calling <code>Deferred.then</code> on the new value of <code>seq</code>; the function passed
-to <code>then</code> calls the next task, which returns a <code>promise</code>, and so
-on. The sequence itself is returned; this value is in fact also a
-<code>promise</code> &#8211; the one returned by the last function in the sequence &#8211;
-which allows you to act on the sequence&#8217;s completion.</p>
-
-<p>Note the use of CoffeeScript&#8217;s <code>do</code> keyword, which creates an
-immediately-executing function. This is necessary to preserve the
-scope of the index variable in the function passed to <code>then</code>;
-were we not to enclose the call to <code>then</code> in an outer function, <code>i</code>
-would remain scoped to the <code>i</code> given in the loop declaration. When the
-function using <code>i</code> was called, it would of course take the value of <code>i</code>
-<em>at the time of being called</em>, not at the time of the function&#8217;s
-creation &#8211; which value is most likely to be the value of <code>i</code> at the
-end of the loop.</p>
-
-<p>Of course, the simplicity of this code is bought at the expense of
-error handling, of which there&#8217;s none: you&#8217;d at least want to check
-you had an array of length > 0, to avoid exceptions, and it would make
-sense to avoid the iteration altogether if the array were only of
-length 1. Nevertheless, I think it&#8217;s a nice demonstration of both
-CoffeeScript&#8217;s concision and <code>$.Deferred</code>&#8217;s flexibility.</p>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/" data-via="rdallasgray" data-counturl="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
 
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/05/11/mod-lang/" title="Previous Post: Mod Lang">&laquo; Mod Lang</a>
+      
+      
+    </p>
+  </footer>
+</article>
 
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
+  </section>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
@@ -732,7 +404,7 @@ CoffeeScript&#8217;s concision and <code>$.Deferred</code>&#8217;s flexibility.<
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2013/06/09/whats-wrong-with-javascript/">What&#8217;s wrong with JavaScript</a>
+        <a href="/blog/2013/06/09/whats-wrong-with-javascript/">What's wrong with JavaScript</a>
       </li>
     
       <li class="post">
@@ -749,7 +421,7 @@ CoffeeScript&#8217;s concision and <code>$.Deferred</code>&#8217;s flexibility.<
 <section>
   <h1>GitHub Repos</h1>
   <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   
   <a href="https://github.com/rdallasgray">@rdallasgray</a> on GitHub
@@ -779,6 +451,7 @@ CoffeeScript&#8217;s concision and <code>$.Deferred</code>&#8217;s flexibility.<
   
 </aside>
 
+
     </div>
   </div>
   <footer role="contentinfo"><p>
@@ -793,7 +466,10 @@ CoffeeScript&#8217;s concision and <code>$.Deferred</code>&#8217;s flexibility.<
       var disqus_shortname = 'automaticcoding';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/';
+        var disqus_url = 'http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

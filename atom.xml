@@ -4,7 +4,7 @@
   <title><![CDATA[Automatic Coding]]></title>
   <link href="http://rdallasgray.github.io/atom.xml" rel="self"/>
   <link href="http://rdallasgray.github.io/"/>
-  <updated>2013-05-16T20:20:29+01:00</updated>
+  <updated>2013-06-09T21:29:09+01:00</updated>
   <id>http://rdallasgray.github.io/</id>
   <author>
     <name><![CDATA[Robert Dallas Gray]]></name>
@@ -12,6 +12,256 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[What's wrong with JavaScript]]></title>
+    <link href="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/"/>
+    <updated>2013-06-09T14:11:00+01:00</updated>
+    <id>http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript</id>
+    <content type="html"><![CDATA[<p>So from my <a href="http://rdallasgray.github.io/blog/2013/05/11/mod-lang/">last post</a> you might guess I&#8217;m
+an advocate for JavaScript. Well, I have more time for the language
+than many Rubyists seem to: it has a nicely compact API and, once
+you&#8217;ve learned to avoid the potholes, it&#8217;s an easy language to get
+things done in. CoffeeScript makes it considerably less painful to
+read and write, and the Node ecosystem is generating some very useful
+toolsets and ways of working.</p>
+
+<p>There are, though, some significant pain-points involved in writing
+non-trivial programs in JavaScript. Some of them are well-covered in
+the literature already, but there are some that seem not to be. I&#8217;m
+interested to gauge the extent to which others have come up against some
+of these, so here&#8217;s my take on what&#8217;s <em>really</em> wrong with JavaScript.</p>
+
+<h2>The obvious stuff</h2>
+
+<p>I&#8217;m not going to dwell on any of this, because it&#8217;s <a href="http://javascript.crockford.com/survey.html">well-trodden territory</a>,
+but to get it out of the way: the scoping is wacky (and the <code>var</code> trap
+is a disaster); the comparison operators (<code>==</code> vs <code>===</code>) are a kludge;
+and the treatment of the <code>this</code> keyword is tiresome. There are many
+more dark corners (see, for instance, <a href="http://www.youtube.com/watch?v=kXEgk1Hdze0">Gary Bernhardt&#8217;s WAT</a>), but all
+of these issues can be worked around more or less easily (and in fact
+CoffeeScript largely does so). There are other issues with the
+language that I&#8217;d argue are harder to deal with &#8211; in some cases,
+practically impossible.</p>
+
+<h2>What is an object?</h2>
+
+<p>So, famously, JavaScript is not a class-based language. It uses
+prototypal inheritance. This is a somewhat simpler type of
+object-oriented language design, whereby object instances inherit both data and
+behaviour from other object instances. It can work quite well (it&#8217;s a
+very memory-efficient system if used properly), and it can to some
+extent be used to mimic class-based inheritance if that&#8217;s what you
+want. The problem with JavaScript, though, is what it uses for
+&#8216;objects&#8217;.</p>
+
+<p>In JavaScript, an &#8216;object&#8217; is effectively just a hashtable. It is what
+in other languages is called a hash, a map or a dictionary &#8211; a simple key:value
+arrangement. It looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">foo</span><span class="o">:</span> <span class="s2">&quot;I&#39;m a property!&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">bar</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s2">&quot;And I&#39;m a method!&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nx">baz</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">bar</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We could either use this object as-is, in which case it&#8217;s what in a
+class-based language we&#8217;d call a Singleton, or we can use it as the
+prototype for another object instance (there are several ways to
+accomplish this &#8211; they&#8217;re covered elsewhere, so I won&#8217;t expand).</p>
+
+<p>As you can see, there&#8217;s no distinction between a &#8216;method&#8217; (a member of
+the hash which is a function) and a &#8216;property&#8217;. Everything is just a
+value indexed on a key of the hashtable. Nice and simple, but take a
+CoffeeScript instance method like this one:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">thing: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">@thing</span> <span class="o">?=</span> <span class="k">new</span> <span class="nx">Thing</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This looks pretty and idiomatic: it&#8217;s an accessor method which
+assigns <code>@thing</code> if it doesn&#8217;t already exist, then returns it.
+See the problem?</p>
+
+<p>CoffeeScript&#8217;s syntax is hiding the fact that we&#8217;ve bound the instance
+variable to the same key as the method (<code>this.thing</code>). I hope this
+seems obvious to you, and that you&#8217;re wondering how anyone could be so
+stupid as to do such a thing. I am here to tell you that this is
+something that a busy developer will do (especially one familiar with
+Ruby), and that it will then manifest a very subtle bug which does not
+immediately show up in unit tests. I will leave you to speculate as to
+how I can be so sure about this.</p>
+
+<p>Now, sure, we could be sensible and create <code>setThing</code> and <code>getThing</code>
+methods, but, you know, we&#8217;re not writing Java. We&#8217;re in a highly
+dynamic language. We want nice things. Or, we could create setters and
+getters using the
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/get">new ES5 syntax</a>
+&#8211; but that&#8217;s not available everywhere (pre-IE9, for instance), and, I
+would argue, is too unwieldy to apply as a rule.</p>
+
+<p>So what we&#8217;re left with is doing something like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">thing: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">@_thing</span> <span class="o">?=</span> <span class="k">new</span> <span class="nx">Thing</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Which is &#8230; irritating. But if we want this kind of method syntax,
+that&#8217;s what we have to do, and we have to be vigilant that we don&#8217;t
+introduce mistakes like the above, because no lint tool will catch them.</p>
+
+<p>It&#8217;s tempting to presume that this is a &#8216;feature&#8217; of prototypal
+inheritance; it&#8217;s not. The two next best-known prototypal languages,
+<a href="http://selflanguage.org/_static/tutorial/Language/ObjectsAndSlots/ObjectsAndSlots.html">Self</a> and <a href="http://www.lua.org/pil/16.html#ObjectSec">Lua</a>, distinguish properties and methods just fine.</p>
+
+<h2>Everything is an object</h2>
+
+<p>And that&#8217;s a good thing, right?</p>
+
+<p>Well, first, it&#8217;s not really true of JavaScript: you need to <a href="http://blogs.adobe.com/webplatform/2012/08/27/javascript-types/">&#8216;box&#8217;</a>
+primitives like numbers to get them to behave like objects, but fair
+enough, many languages do something similar. Second, and more
+importantly, see above as regards what objects in JavaScript <em>actually
+are</em>. What we&#8217;re really saying is &#8216;everything is a hashtable&#8217;. Is that
+a good thing?</p>
+
+<p>No. It isn&#8217;t. Imagine another hypothetical CoffeeScript method:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">copyObject: </span><span class="nf">(inputObject) -&gt;</span>
+</span><span class='line'>  <span class="nv">copy = </span><span class="p">[]</span>
+</span><span class='line'>  <span class="k">for</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">val</span> <span class="k">of</span> <span class="nx">inputObject</span>
+</span><span class='line'>    <span class="nv">copy.key = </span><span class="nx">val</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code>
+to an array rather than a hash. The really bad news? <em>This method will work
+almost as if it were correct</em>. We can get every key of <code>inputObject</code>
+on <code>copy</code> correctly, because an array, in JavaScript, <em>is just a
+hashtable</em>. We can set (pretty much) any key on it we like, and get it
+back intact. But again, subtle bugs abound; arrays are not intended to
+be used like this, and things will go wrong if, for example, you start
+trying to iterate over <code>copy</code>&#8217;s properties, expecting it to be a hash.</p>
+
+<p>Ouch.</p>
+
+<h2>Nothing is an object</h2>
+
+<p>Try this, in a CoffeeScript class:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">bindClick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="s">&quot;</span><span class="err">#</span><span class="s">clickable&quot;</span><span class="p">).</span><span class="nx">on</span> <span class="s">&quot;click&quot;</span><span class="p">,</span> <span class="nx">@onClick</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">respondToClick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nb">window</span><span class="p">.</span><span class="nx">alert</span> <span class="s">&quot;clicked!&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">onClick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">@respondToClick</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So presuming <code>bindClick</code> has been called, what happens when we click
+on <code>"#clickable"</code>?</p>
+
+<p><code>respondtoClick</code> will never be called, and you&#8217;ll almost certainly get
+an exception. Remember, there are no methods in Javascript, only
+functions. We bound the function <code>this.onClick</code> to the click event;
+that function has no idea that it&#8217;s also a method. Why should a value
+in a hashtable know which hashtable it belongs to? In the context of
+the function <code>this.onClick</code>, <code>this</code> is the function itself or,
+sometimes, the <code>window</code> object. Neither of these has a
+<code>respondToClick</code> method, so we get an exception.</p>
+
+<p>In short, we can call any function in scope, from anywhere, regardless of
+whether it&#8217;s part of an &#8216;object&#8217;; and attaching a function to an object as
+a method only binds <code>this</code> correctly <em>when the function is called in
+the context of its parent object</em>.</p>
+
+<p>The correct way to do the above is of course:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">bindClick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="s">&quot;</span><span class="err">#</span><span class="s">clickable&quot;</span><span class="p">).</span><span class="nx">on</span> <span class="s">&quot;click&quot;</span><span class="p">,</span> <span class="o">=&gt;</span> <span class="nx">@respondToClick</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We pass an anonymous function to <code>.on</code>, explicitly binding <code>this</code> to
+our current context using CoffeeScript&#8217;s <code>=&gt;</code> operator.</p>
+
+<h2>_missing</h2>
+
+<p>All of the above can be worked around or avoided; at
+present, one very important thing can&#8217;t be. JavaScript has no
+equivalent to <a href="http://ruby-doc.org/core-2.0/BasicObject.html#method-i-method_missing">Ruby&#8217;s <code>method_missing</code></a>, <a href="http://c2.com/cgi/wiki?DoesNotUnderstand">Smalltalk&#8217;s
+<code>doesNotUnderstand</code></a>, <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtForwarding.html">Objective-C&#8217;s <code>forwardInvocation</code></a>, <a href="http://php.net/manual/en/language.oop5.overloading.php">PHP&#8217;s <code>__call</code></a>,
+etcetera. You can&#8217;t catch a call to an undefined method in JavaScript
+and then do something with it. This is, again, to do with the fact
+that there&#8217;s nothing to distinguish &#8216;properties&#8217; from &#8216;methods&#8217; in
+JavaScript; plenty of &#8216;properties&#8217; won&#8217;t be callable as functions, but
+that doesn&#8217;t necessarily mean they <em>should be</em>.</p>
+
+<p>It&#8217;s important to be able to do this in traditional object-oriented
+design; we need it to do proper <a href="http://en.wikipedia.org/wiki/Delegation_(programming">delegation</a>), for example. It&#8217;s also a
+tremendously convenient feature if you want to do metaprogramming
+(e.g. adding properties or methods to an object dynamically at
+runtime). There are two ways to sort-of do it right now: one is
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/noSuchMethod">Mozilla&#8217;s <code>__noSuchMethod__</code></a>, which is only supported in SpiderMonkey
+and likely to be deprecated; the other is the &#8216;official&#8217; ECMAScript
+proposal, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy?redirectlocale=en-US&amp;redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FProxy">Proxy</a>, which is characteristically circuitous and
+counterintuitive. It can be <a href="http://stackoverflow.com/questions/10665892/enable-harmony-proxies-in-nodejs">turned on in V8</a> (and thus in Node), but
+you&#8217;d be pretty far out on a limb to use it.</p>
+
+<h2>Finally</h2>
+
+<p>JavaScript was designed in a hurry, and it wasn&#8217;t designed
+to build large, long-lived, maintainable applications. The fact that
+people are using it to do so is a testament to the ingenuity of
+serious JavaScript users, and their insight that what JavaScript
+<em>does</em> offer makes the failings tolerable.</p>
+
+<p>They are significant failings, though. I&#8217;ve yet to hear anyone
+convincingly argue that JavaScript&#8217;s version of OOP offers anything in
+addition to or distinction from more traditional versions; it&#8217;s a kind
+of Heisenbergian OOP, which breaks down as soon as you stop pretending
+it&#8217;s there. Similarly, I&#8217;m not convinced that the changes being made
+(and proposed) are the right ones. They make the language seem more
+complex &#8211; and this is a language whose simplicity is its virtue.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mod Lang]]></title>
