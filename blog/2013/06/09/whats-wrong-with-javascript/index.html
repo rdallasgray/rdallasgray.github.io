@@ -9,9 +9,8 @@
   <meta name="author" content="Robert Dallas Gray">
 
   
-  <meta name="description" content="So from my last post you might guess I&#8217;m
-an advocate for JavaScript. Well, I have more time for the language
-than many Rubyists seem to: it has &hellip;">
+  <meta name="description" content="(Updated 2013-06-10 with some corrections and fine-tunings) So from my last post you might guess I&#8217;m
+an advocate for JavaScript. Well, I have &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -95,7 +94,9 @@ than many Rubyists seem to: it has &hellip;">
   </header>
 
 
-<div class="entry-content"><p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I&#8217;m
+<div class="entry-content"><p><em>(Updated 2013-06-10 with some corrections and fine-tunings)</em></p>
+
+<p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I&#8217;m
 an advocate for JavaScript. Well, I have more time for the language
 than many Rubyists seem to: it has a nicely compact API and, once
 you&#8217;ve learned to avoid the potholes, it&#8217;s an easy language to get
@@ -132,9 +133,8 @@ extent be used to mimic class-based inheritance if that&#8217;s what you
 want. The problem with JavaScript, though, is what it uses for
 &#8216;objects&#8217;.</p>
 
-<p>In JavaScript, an &#8216;object&#8217; is effectively just a hashtable. It is what
-in other languages is called a hash, a map or a dictionary &#8211; a simple key:value
-arrangement. It looks like this:</p>
+<p>In JavaScript, an &#8216;object&#8217; is effectively just a key&#8211;value structure. It is what
+in other languages is called a hash, a map or a dictionary. It looks like this:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -163,9 +163,9 @@ prototype for another object instance (there are several ways to
 accomplish this &#8211; they&#8217;re covered elsewhere, so I won&#8217;t expand).</p>
 
 <p>As you can see, there&#8217;s no distinction between a &#8216;method&#8217; (a member of
-the hash which is a function) and a &#8216;property&#8217;. Everything is just a
-value indexed on a key of the hashtable. Nice and simple, but take a
-CoffeeScript instance method like this one:</p>
+the object which is a function) and a &#8216;property&#8217;. Everything is just a
+value indexed on a key. Nice and simple, but take a CoffeeScript
+instance method like this one:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -178,10 +178,10 @@ CoffeeScript instance method like this one:</p>
 assigns <code>@thing</code> if it doesn&#8217;t already exist, then returns it.
 See the problem?</p>
 
-<p>CoffeeScript&#8217;s syntax is hiding the fact that we&#8217;ve bound the instance
-variable to the same key as the method (<code>this.thing</code>). I hope this
-seems obvious to you, and that you&#8217;re wondering how anyone could be so
-stupid as to do such a thing. I am here to tell you that this is
+<p>CoffeeScript&#8217;s syntax is helping to hide the fact that we&#8217;ve bound the
+instance variable to the same key as the method (<code>this.thing</code>). I hope
+this seems obvious to you, and that you&#8217;re wondering how anyone could
+be so stupid as to do such a thing. I am here to tell you that this is
 something that a busy developer will do (especially one familiar with
 Ruby), and that it will then manifest a very subtle bug which does not
 immediately show up in unit tests. I will leave you to speculate as to
@@ -220,7 +220,7 @@ inheritance; it&#8217;s not. The two next best-known prototypal languages,
 primitives like numbers to get them to behave like objects, but fair
 enough, many languages do something similar. Second, and more
 importantly, see above as regards what objects in JavaScript <em>actually
-are</em>. What we&#8217;re really saying is &#8216;everything is a hashtable&#8217;. Is that
+are</em>. What we&#8217;re really saying is &#8216;everything is a key&#8211;value structure&#8217;. Is that
 a good thing?</p>
 
 <p>No. It isn&#8217;t. Imagine another hypothetical CoffeeScript method:</p>
@@ -232,18 +232,19 @@ a good thing?</p>
 </pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">copyObject: </span><span class="nf">(inputObject) -&gt;</span>
 </span><span class='line'>  <span class="nv">copy = </span><span class="p">[]</span>
 </span><span class='line'>  <span class="k">for</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">val</span> <span class="k">of</span> <span class="nx">inputObject</span>
-</span><span class='line'>    <span class="nv">copy.key = </span><span class="nx">val</span>
+</span><span class='line'>    <span class="nx">copy</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="o">=</span> <span class="nx">val</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code>
-to an array rather than a hash. The really bad news? <em>This method will work
-almost as if it were correct</em>. We can get every key of <code>inputObject</code>
-on <code>copy</code> correctly, because an array, in JavaScript, <em>is just a
-hashtable</em>. We can set (pretty much) any key on it we like, and get it
-back intact. But again, subtle bugs abound; arrays are not intended to
-be used like this, and things will go wrong if, for example, you start
-trying to iterate over <code>copy</code>&#8217;s properties, expecting it to be a hash.</p>
+<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code> to
+an array rather than an object. The really bad news? <em>This method will
+work almost as if it were correct</em>. We can get every key of
+<code>inputObject</code> on <code>copy</code> correctly, because an array, in JavaScript, is
+an object, and therefore <em>is just a key&#8211;value structure</em>. We can set
+(pretty much) any key on it we like, and get it back intact. But
+again, subtle bugs abound; arrays are not intended to be used like
+this, and things will go wrong if, for example, you start trying to
+iterate over <code>copy</code>&#8217;s properties, expecting it to be a &#8216;real&#8217; object.</p>
 
 <p>Ouch.</p>
 
@@ -277,9 +278,9 @@ on <code>"#clickable"</code>?</p>
 an exception. Remember, there are no methods in Javascript, only
 functions. We bound the function <code>this.onClick</code> to the click event;
 that function has no idea that it&#8217;s also a method. Why should a value
-in a hashtable know which hashtable it belongs to? In the context of
-the function <code>this.onClick</code>, <code>this</code> is the function itself or,
-sometimes, the <code>window</code> object. Neither of these has a
+in a key&#8211;value structure know which structure it belongs to? In the
+context of the function <code>this.onClick</code>, <code>this</code> is the function itself
+or, sometimes, the <code>window</code> object. Neither of these has a
 <code>respondToClick</code> method, so we get an exception.</p>
 
 <p>In short, we can call any function in scope, from anywhere, regardless of

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Automatic Coding]]></title>
   <link href="http://rdallasgray.github.io/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://rdallasgray.github.io/"/>
-  <updated>2013-06-09T21:29:09+01:00</updated>
+  <updated>2013-06-10T19:33:47+01:00</updated>
   <id>http://rdallasgray.github.io/</id>
   <author>
     <name><![CDATA[Robert Dallas Gray]]></name>
@@ -18,7 +18,9 @@
     <link href="http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript/"/>
     <updated>2013-06-09T14:11:00+01:00</updated>
     <id>http://rdallasgray.github.io/blog/2013/06/09/whats-wrong-with-javascript</id>
-    <content type="html"><![CDATA[<p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I'm
+    <content type="html"><![CDATA[<p><em>(Updated 2013-06-10 with some corrections and fine-tunings)</em></p>
+
+<p>So from my <a href="/blog/2013/05/11/mod-lang/">last post</a> you might guess I'm
 an advocate for JavaScript. Well, I have more time for the language
 than many Rubyists seem to: it has a nicely compact API and, once
 you've learned to avoid the potholes, it's an easy language to get
@@ -55,9 +57,8 @@ extent be used to mimic class-based inheritance if that's what you
 want. The problem with JavaScript, though, is what it uses for
 'objects'.</p>
 
-<p>In JavaScript, an 'object' is effectively just a hashtable. It is what
-in other languages is called a hash, a map or a dictionary -- a simple key:value
-arrangement. It looks like this:</p>
+<p>In JavaScript, an 'object' is effectively just a key--value structure. It is what
+in other languages is called a hash, a map or a dictionary. It looks like this:</p>
 
 <p>```javascript
 var obj = {</p>
@@ -80,9 +81,9 @@ prototype for another object instance (there are several ways to
 accomplish this -- they're covered elsewhere, so I won't expand).</p>
 
 <p>As you can see, there's no distinction between a 'method' (a member of
-the hash which is a function) and a 'property'. Everything is just a
-value indexed on a key of the hashtable. Nice and simple, but take a
-CoffeeScript instance method like this one:</p>
+the object which is a function) and a 'property'. Everything is just a
+value indexed on a key. Nice and simple, but take a CoffeeScript
+instance method like this one:</p>
 
 <p><code>coffeescript
 thing: -&gt;
@@ -93,10 +94,10 @@ thing: -&gt;
 assigns <code>@thing</code> if it doesn't already exist, then returns it.
 See the problem?</p>
 
-<p>CoffeeScript's syntax is hiding the fact that we've bound the instance
-variable to the same key as the method (<code>this.thing</code>). I hope this
-seems obvious to you, and that you're wondering how anyone could be so
-stupid as to do such a thing. I am here to tell you that this is
+<p>CoffeeScript's syntax is helping to hide the fact that we've bound the
+instance variable to the same key as the method (<code>this.thing</code>). I hope
+this seems obvious to you, and that you're wondering how anyone could
+be so stupid as to do such a thing. I am here to tell you that this is
 something that a busy developer will do (especially one familiar with
 Ruby), and that it will then manifest a very subtle bug which does not
 immediately show up in unit tests. I will leave you to speculate as to
@@ -133,7 +134,7 @@ inheritance; it's not. The two next best-known prototypal languages,
 primitives like numbers to get them to behave like objects, but fair
 enough, many languages do something similar. Second, and more
 importantly, see above as regards what objects in JavaScript <em>actually
-are</em>. What we're really saying is 'everything is a hashtable'. Is that
+are</em>. What we're really saying is 'everything is a key--value structure'. Is that
 a good thing?</p>
 
 <p>No. It isn't. Imagine another hypothetical CoffeeScript method:</p>
@@ -143,19 +144,20 @@ copyObject: (inputObject) ->
   copy = []
   for key, val of inputObject</p>
 
-<pre><code>copy.key = val
+<pre><code>copy[key] = val
 </code></pre>
 
 <p>```</p>
 
-<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code>
-to an array rather than a hash. The really bad news? <em>This method will work
-almost as if it were correct</em>. We can get every key of <code>inputObject</code>
-on <code>copy</code> correctly, because an array, in JavaScript, <em>is just a
-hashtable</em>. We can set (pretty much) any key on it we like, and get it
-back intact. But again, subtle bugs abound; arrays are not intended to
-be used like this, and things will go wrong if, for example, you start
-trying to iterate over <code>copy</code>'s properties, expecting it to be a hash.</p>
+<p>Spot the deliberate mistake? Busy developer has initialised <code>copy</code> to
+an array rather than an object. The really bad news? <em>This method will
+work almost as if it were correct</em>. We can get every key of
+<code>inputObject</code> on <code>copy</code> correctly, because an array, in JavaScript, is
+an object, and therefore <em>is just a key--value structure</em>. We can set
+(pretty much) any key on it we like, and get it back intact. But
+again, subtle bugs abound; arrays are not intended to be used like
+this, and things will go wrong if, for example, you start trying to
+iterate over <code>copy</code>'s properties, expecting it to be a 'real' object.</p>
 
 <p>Ouch.</p>
 
@@ -181,9 +183,9 @@ on <code>"#clickable"</code>?</p>
 an exception. Remember, there are no methods in Javascript, only
 functions. We bound the function <code>this.onClick</code> to the click event;
 that function has no idea that it's also a method. Why should a value
-in a hashtable know which hashtable it belongs to? In the context of
-the function <code>this.onClick</code>, <code>this</code> is the function itself or,
-sometimes, the <code>window</code> object. Neither of these has a
+in a key--value structure know which structure it belongs to? In the
+context of the function <code>this.onClick</code>, <code>this</code> is the function itself
+or, sometimes, the <code>window</code> object. Neither of these has a
 <code>respondToClick</code> method, so we get an exception.</p>
 
 <p>In short, we can call any function in scope, from anywhere, regardless of
