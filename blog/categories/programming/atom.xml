@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Automatic Coding]]></title>
   <link href="http://rdallasgray.github.io/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://rdallasgray.github.io/"/>
-  <updated>2013-06-10T21:52:28+01:00</updated>
+  <updated>2013-09-27T22:04:18+01:00</updated>
   <id>http://rdallasgray.github.io/</id>
   <author>
     <name><![CDATA[Robert Dallas Gray]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Some technical podcasts I listen to]]></title>
+    <link href="http://rdallasgray.github.io/blog/2013/09/27/some-technical-podcasts-i-listen-to/"/>
+    <updated>2013-09-27T20:57:00+01:00</updated>
+    <id>http://rdallasgray.github.io/blog/2013/09/27/some-technical-podcasts-i-listen-to</id>
+    <content type="html"><![CDATA[<p>Been a while. Here's a short one on some of the stuff I listen to when
+I have the time. It's intended primarily to solicit responses of the
+'You like that? Then you'll like this!' variety -- I need more
+material.</p>
+
+<p>So, top five.</p>
+
+<h2>Ruby Rogues</h2>
+
+<p><a href="http://rubyrogues.com">link</a></p>
+
+<p>An indisputable number one. Doesn't matter whether you're a Rubyist --
+you'll get something from this. It's very well produced, the regulars
+are well-practised, and the guests are frequently stellar (Kent Beck,
+e.g.). Despite (or perhaps because of) the Ruby focus, the topics tend
+to be relevant to software engineering in general, especially the reading list
+episodes: Patterns of Application Architecture, Smalltalk Best
+Practice Patterns, Growing Object Oriented Software ... it's the
+canon, not just the Ruby stuff. Highly recommended.</p>
+
+<h2>The Changelog</h2>
+
+<p><a href="http://thechangelog.com">link</a></p>
+
+<p>An overview of what's happening in open source. Very on the
+pulse. Great guests, good production values and educated hosts
+(although, in the nicest possible way, Adam Stacoviak would benefit
+the show by doing more listening and less talking).</p>
+
+<h2>Javascript Jabber</h2>
+
+<p><a href="http://javascriptjabber.com">link</a></p>
+
+<p>I'm paying less attention to Javascript these days, but I still
+subscribe to and enjoy this podcast. Same stable as Ruby Rogues, and
+same presenter (the very personable Charles Max Wood); similarly high
+production values, too. Good guests and high-level chat.</p>
+
+<h2>Mostly Erlang</h2>
+
+<p><a href="http://mostlyerlang.com">link</a></p>
+
+<p>It's interesting to get a bit out of your comfort zone. Erlang people
+talk about different stuff. The show is patterned after the Ruby
+Rogues/Javascript Jabber format, but the nature of the community is so
+different that it's not really comparable; production values are
+lower, but the guests, and the general tone, are much more oriented
+toward serious systems engineering, which makes a refreshing listen,
+for me.</p>
+
+<h2>Pragmatic Podcasts</h2>
+
+<p><a href="http://pragprog.com/podcasts">link</a></p>
+
+<p>Somewhat few and far between (it's hard to tell if they're even still
+going), these are what you'd expect from the PragProg stable: serious,
+somewhat conservative, but very valuable. At their best they afford a
+very high-level view of the practice of software development.</p>
+
+<p>Honourable mentions: <a href="http://nodeup.com">NodeUp</a>, <a href="http://episodes.gitminutes.com">Git Minutes</a>, <a href="http://foodfightshow.org">Food Fight</a>.</p>
+
+<p>Don't even talk to me about the Dev Show.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[What's wrong with JavaScript]]></title>
