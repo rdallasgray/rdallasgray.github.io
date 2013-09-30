@@ -1,0 +1,396 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Building a (fairly) sane dev environment in Windows - Automatic Coding</title>
+  <meta name="author" content="Robert Dallas Gray">
+
+  
+  <meta name="description" content="I recently left a job that mandated Windows as a development
+environment. Well, that&#8217;s not strictly true &#8211; they were happy enough
+for me &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rdallasgray.github.io/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Automatic Coding" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automatic Coding</a></h1>
+  
+    <h2>Thoughts on programming, software engineering, and Emacs</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:rdallasgray.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Building a (fairly) sane dev environment in Windows</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-28T19:42:00+01:00" pubdate data-updated="true">Sep 28<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I recently left a job that mandated Windows as a development
+environment. Well, that&#8217;s not strictly true &#8211; they were happy enough
+for me to use Linux in a VM, but that was ultimately more trouble than
+it was worth.</p>
+
+<p>I&#8217;ve had to dip into Windows before (having worked a job where the
+server-side code was .Net), but I&#8217;ve never had to use it as a primary
+dev environment. Long story short: it is <em>extremely</em> painful to use
+Windows for modern web development, or any kind of development which
+is not explicitly <em>for</em> Windows.</p>
+
+<p>Here is a statement of the main problems, and the measures which can
+get you at least close to a solution.</p>
+
+<h2>Git</h2>
+
+<p>An odd one to start with perhaps, but it has a significant impact on
+the rest of the setup. There are two ways you can get a usable Git
+setup working on Windows: one is to use
+<a href="http://www.cygwin.com">Cygwin</a>, of which more below, and one is
+<a href="http://msysgit.github.io">Git for Windows</a>, otherwise known as
+MSYS-Git. You can download a lightweight version of
+MSYS-Git as <a href="http://git-scm.com/downloads">Git Bash</a> &#8211; which, you
+shouldn&#8217;t be surprised to hear, comes with an implementation of Bash
+&#8211; but I&#8217;m going to advise getting the
+<a href="http://code.google.com/p/msysgit/downloads/list?q=net+installer">full installer</a>. It
+should become clear why.</p>
+
+<p>MSYS-Git is quite slow; apparently the version that you can use with
+Cygwin is faster, but Cygwin was too much of an overhead for my purposes.</p>
+
+<h2>The command line</h2>
+
+<p>Where to begin. The Windows command line is a  disaster, unless
+all you need to do is change directories and open files. No grep. No
+vi. No sed. The knock-on effects, on editors and other tools which rely
+on these utilities, are not fun. I&#8217;d been recommended
+<a href="http://code.google.com/p/clink/">clink</a>, which offers Bash-like
+completion, but it&#8217;s still &#8230; the Windows command line.</p>
+
+<p>The options, if you want Bash or something like it, are
+<a href="http://www.cygwin.com">Cygwin</a>, effectively a complete replacement
+for the Windows command system,
+<a href="https://github.com/bmatzelle/gow/wiki">GoW (Gnu on Windows)</a>, a
+lighter-weight port of a set of Gnu utilities, or
+<a href="http://www.mingw.org/wiki/MSYS">MSYS</a>, a package similar to GoW,
+intended for compiling Gnu utilities on Windows. An outside choice is
+<a href="http://www.emacswiki.org/emacs/CategoryEshell">Eshell</a> if you&#8217;re an
+Emacs user; I tried it, but found it didn&#8217;t fit well with my workflow.</p>
+
+<p>Cygwin is a very comprehensive solution: it presumes you&#8217;re basically
+going to <em>exist</em> within it, which really didn&#8217;t work for me. GoW was
+nice, but didn&#8217;t play well with the Git-integrated Bash (see above),
+and neither did a separate install of MSYS. For these reasons, I
+suggest installing the complete MSYS-Git environment I mentioned
+above: you get Git, Bash and a decent subset of the Gnu utilities, all well-integrated.</p>
+
+<h2>A terminal emulator</h2>
+
+<p>That this is not a solved problem should give you some idea of The
+State of Things. There are two contenders, neither of which really represents an
+resounding victory:
+<a href="http://code.google.com/p/conemu-maximus5/">ConEmu</a> and
+<a href="http://sourceforge.net/projects/console/files/">Console2</a>. (Incidentally,
+are you noticing how much of this stuff is on Google Code? And
+<em>SourceForge</em> for heaven&#8217;s sake? The mind boggles). ConEmu is highly
+configurable. I do not need my terminal emulator to be highly
+configurable. Console2 is marginally easier to use, but pug ugly. I
+went for Console2.</p>
+
+<h2>Package management</h2>
+
+<p>The only real game in town here is
+<a href="http://chocolatey.org">Chocolatey</a>. Like most community projects in
+the Windows world, it&#8217;s undermaintained and generally a bit thin, but at least
+it&#8217;s there. (And no disrespect to the maintainers here: it&#8217;s numbers
+I&#8217;m complaining about, not individual effort). Installs largely work;
+uninstalls or upgrades often don&#8217;t. But until
+<a href="https://github.com/nddrylliog/winbrew">Winbrew</a> is reliable, there we
+are. I managed to get <a href="http://chocolatey.org/packages/ack">ack</a>
+installed via Chocolatey, so two cheers for it, at least; all the
+packages mentioned above are available too.</p>
+
+<h2>Runtime/language version managers</h2>
+
+<p>I&#8217;m talking about the likes of
+<a href="https://github.com/creationix/nvm">nvm</a> and
+<a href="https://github.com/postmodern/chruby">chruby</a> here. I used
+<a href="https://github.com/marcelklehr/nodist">Nodist</a> (because it was
+available on Chocolatey and <a href="https://github.com/hakobera/nvmw">nvmw</a>
+wasn&#8217;t); there&#8217;s also <a href="https://github.com/vertiginous/pik">pik</a> for
+Ruby, but I couldn&#8217;t get it working.</p>
+
+<h2>Type</h2>
+
+<p>Call me frivolous, but I have a background in typography and I <em>cannot
+stand</em> the look of type on Windows. The fault lies with the
+anti-aliasing, which only works in the vertical plane; type looks
+spindly and horrible, no matter how you set it up. If you&#8217;re used to
+modern-looking type, as rendered on OS X or Ubuntu, and you have any
+sort of sensitivity to these things, you just can&#8217;t live with it.</p>
+
+<p>It&#8217;s not a total solution, but
+<a href="https://code.google.com/p/mactype/">MacType</a> saved me clawing my eyes
+out, at least.</p>
+
+<h2>In summary</h2>
+
+<p>Attempting web development on Windows feels like being thrown back in
+time five years or so. I&#8217;ve touched on the main pain points, but I
+can&#8217;t even remember how many, many times I had to ransack Stack
+Overflow to find out why such-and-such a gem wouldn&#8217;t work properly,
+or dig about in the awful Registry. How many times I restarted the
+machine to be told that Windows had decided to install 127
+updates. How long and often I watched the spinny blue circle while a bleedin&#8217;
+<em>Explorer window</em> opened. Ubuntu, <em>in a VM</em>, was considerably faster
+and more usable in every way.</p>
+
+<p>The larger problem is that the whole experience of working on Windows
+is so rotten that <em>nobody wants to fix this stuff</em>. Plenty of GitHub
+issues I followed, on large, respectable repos, were
+unresolved. &#8216;Windows,&#8217; said the maintainers. Won&#8217;t fix. Closed.</p>
+
+<p>I really can&#8217;t blame them, and similarly, I can see why the
+whole open-source movement is so backward on the Windows platform;
+hardly anyone&#8217;s there, and community is what keeps all this going.
+I hope, for the sake of the people who have to use it, that it gets
+better. I won&#8217;t be hanging around to see, though.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Robert Dallas Gray</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-28T19:42:00+01:00" pubdate data-updated="true">Sep 28<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/programming/'>programming</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rdallasgray.github.io/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/" data-via="rdallasgray" data-counturl="http://rdallasgray.github.io/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/09/27/some-technical-podcasts-i-listen-to/" title="Previous Post: Some technical podcasts I listen to">&laquo; Some technical podcasts I listen to</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/">Building a (fairly) sane dev environment in Windows</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/27/some-technical-podcasts-i-listen-to/">Some technical podcasts I listen to</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/06/09/whats-wrong-with-javascript/">What's wrong with JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/11/mod-lang/">Mod Lang</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/27/async-sequences-using-jquery-dot-deferred/">Async sequences using jQuery.Deferred</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/rdallasgray">@rdallasgray</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'rdallasgray',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Robert Dallas Gray -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'automaticcoding';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rdallasgray.github.io/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/';
+        var disqus_url = 'http://rdallasgray.github.io/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
