@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Automatic Coding]]></title>
   <link href="http://rdallasgray.github.io/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://rdallasgray.github.io/"/>
-  <updated>2013-09-30T21:04:54+01:00</updated>
+  <updated>2015-08-04T09:54:10+01:00</updated>
   <id>http://rdallasgray.github.io/</id>
   <author>
     <name><![CDATA[Robert Dallas Gray]]></name>
@@ -12,6 +12,200 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Lessons in developing with Vagrant]]></title>
+    <link href="http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant/"/>
+    <updated>2015-08-03T09:51:00+01:00</updated>
+    <id>http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant</id>
+    <content type="html"><![CDATA[<p>At work, we use <a href="http://vagrantup.com">Vagrant</a> to create and manage development environments. Once you've experienced working like this, you probably won't want to work the 'old' way ever again (I've begun to transition my personal projects to using Vagrant now, too). Having each project come with its own complete, isolated environment allows any developer to pick it up and work on it immediately; it also makes deployment a part of the development process, as each provisioning run of the Vagrant VM is effectively a miniature deployment in itself. When the project is to be deployed to a staging or production environment, you can use much the same tried and tested processes to do so (we use <a href="http://www.chef.io">Chef</a>).</p>
+
+<p>From what I'm hearing and reading, more and more developers are working like this, but it's still not a particularly well-understood way of doing things. The usual way it's done is that your editor and tools live on your host machine, you interact with the project code on the guest machine using a shared folder, and you run tests and other development processes on the guest machine via ssh.</p>
+
+<p>Sounds pretty straightforward, but there are some subtle problems. One is filesystem events, which don't work as they normally would.</p>
+
+<h2>Watching the filesystem</h2>
+
+<p>In most modern operating systems, there's some kind of mechanism for a process to receive notifications when files change. In Linux it's <a href="http://man7.org/linux/man-pages/man7/inotify.7.html">inotify</a>, for example. These mechanisms allow processes to watch a set of files for changes without <em>polling</em> the filesystem (i.e. repeatedly checking the modification times of the watched files). Because they work natively, and without polling, they're very fast.</p>
+
+<p>In the standard Vagrant development setup, though, you're making changes to the files on the <em>host</em> machine, but running the watching processes in the <em>guest</em> machine. And unfortunately that means that mechanisms like <code>inotify</code> don't work.</p>
+
+<p>If you use <a href="https://github.com/guard/guard">Guard</a>, for example, to run tests in a Ruby app when files change, it uses <a href="https://github.com/guard/listen">Listen</a> to watch the filesystem. Listen ships with adaptors for many different notification systems, including a fallback polling adaptor. Until quite recently, the only way to use Guard inside a Vagrant VM was to use the polling adaptor -- which is very slow, and very resource-intensive. Polling the files in a decent-sized Rails app at an interval of 1 second will most likely pin the CPU of the guest machine; also, in my experience it just wasn't reliable (changes often wouldn't seem to be noticed, or would be noticed late).</p>
+
+<p>If you're using something like <a href="http://github.com/guard/guard-rspec">guard-rspec</a> to do continuous TDD, for instance, then having to repeatedly nudge the filesystem to pick up changes, and wait several seconds for them to be picked up, becomes, well, painful. There's a way round this, though: Listen and Guard provide a way to listen to filesystem events in one machine and forward the events to another machine over the network. I won't describe this in detail, because <a href="http://jamie.ideasasylum.com/2014/02/efficiently-using-guard-vagrant-rails-development/">it's been done elsewhere</a>.</p>
+
+<p>There are a couple of niggling inconveniences with this solution, though. Firstly, it's just cumbersome: You need to start a <code>listen</code> process on your host machine, then start a <code>guard</code> process on your guest machine, and then remember to shut them both down when you're done. In a traditional setup you just run <code>guard</code> and away you go.</p>
+
+<p>Secondly, the <code>guard</code> process needs to know the full path to the watched directory <em>on the host machine</em>, which means it's hard to make the setup portable (it's a near certainty that the path will be different for every developer on the project).</p>
+
+<h3>vagrant-triggers</h3>
+
+<p>Enter <a href="https://github.com/emyl/vagrant-triggers">vagrant-triggers</a>, which lets you do arbitrary stuff around the lifecycle events of a Vagrant VM. We can use this to start and stop <code>listen</code> on the host machine for us, which solves issue one. And we can set up some environment variables inside the guest machine to solve problem two. Let's do that first.</p>
+
+<p>```ruby</p>
+
+<h1>In Vagrantfile:</h1>
+
+<p>LISTEN_PORT = 4000
+config.vm.network :forwarded_port, guest: LISTEN_PORT, host: LISTEN_PORT
+config.vm.provision :shell, inline: &lt;<-END
+echo "export HOST_ROOT=#{File.dirname(__FILE__)}" > /etc/profile.d/host_root.sh
+echo "export LISTEN_PORT=#{LISTEN_PORT}" > /etc/profile.d/listen_port.sh
+END
+```</p>
+
+<p>That creates the environment variables <code>HOST_ROOT</code> and <code>LISTEN_PORT</code> in the guest machine, and forwards <code>LISTEN_PORT</code> to the guest. Next we create a couple of simple functions in the Vagrantfile:</p>
+
+<p><code>``ruby
+def stop_listen_script
+  listen_exe =</code>which listen<code>.chomp
+  ps =</code>ps aux | grep '#{listen_exe}'`</p>
+
+<pre><code>.match(/\w*\s+(\d+)\s+.*127\.0\.0\.1:#{LISTEN_PORT}/)
+</code></pre>
+
+<p>  if (pid = (ps &amp;&amp; ps[1]))</p>
+
+<pre><code>"kill #{pid}"
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>"true"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def start_listen_script
+  "listen -f 127.0.0.1:#{LISTEN_PORT} > /dev/null 2>&amp;1 &amp;"
+end
+```</p>
+
+<p><code>start_listen_script</code> starts <code>listen</code> and forwards change notifications to <code>LISTEN_PORT</code>; because we've forwarded that port to the guest machine, the guest machine will receive the notifications.</p>
+
+<p><code>stop_listen_script</code> checks for a running process in the host machine which matches the <code>listen</code> executable and arguments, and if it finds one, kills it. We need to do this so that Vagrant can run its lifecycle operations correctly, and so we don't end up with lots of orphan <code>listen</code> processes.</p>
+
+<p>Now we're almost ready to create some triggers, but we need to make some additional gems available to Vagrant. Run the following in your host machine:</p>
+
+<p><code>ruby
+vagrant plugin install celluloid-io &amp;&amp; vagrant plugin install thor
+</code></p>
+
+<p><a href="https://github.com/celluloid/celluloid-io">celluloid-io</a> and <a href="https://github.com/erikhuda/thor">thor</a> are necessary for <code>listen</code> to work correctly when started as part of Vagrant's lifecycle (interesting to note here that <code>vagrant plugin install</code> is just <code>gem install</code> in disguise -- it can make arbitrary gems available to Vagrant).</p>
+
+<p>Next we need to make sure <code>listen</code> is available on our host machine:</p>
+
+<p><code>ruby
+gem install listen
+</code></p>
+
+<p>And finally install <code>vagrant-triggers</code>:</p>
+
+<p><code>ruby
+vagrant plugin install vagrant-triggers
+</code></p>
+
+<p>Now we can create the following triggers in our Vagrantfile:</p>
+
+<p>```ruby</p>
+
+<h1>Stop listen whenever we shut down or re-forward ports (a running listen</h1>
+
+<h1>will prevent port forwarding).</h1>
+
+<p>[:up, :resume, :suspend, :halt, :destroy, :reload].each do |cmd|
+  config.trigger.before cmd do</p>
+
+<pre><code>run stop_listen_script
+</code></pre>
+
+<p>  end
+end</p>
+
+<h1>Start listen when we start the machine</h1>
+
+<p>[:up, :resume, :reload].each do |cmd|
+  config.trigger.after cmd do</p>
+
+<pre><code>run start_listen_script
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>That will start <code>listen</code> on the host when we bring our VM up, and stop <code>listen</code> when we take it down or cycle it. All we need now is a way to properly run <code>guard</code> inside the guest machine, picking up the correct watch directory and ports. We can do that in our project's Rakefile:</p>
+
+<p>```ruby
+namespace :guard do
+  desc "Start guard, listening for changes on a given port at the default gateway"
+  task :remote do</p>
+
+<pre><code>cmd = "guard --clear -o '10.0.2.2:#{ENV['LISTEN_PORT']}' -w '#{ENV['HOST_ROOT']}'"
+system(cmd)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>That works thanks to the environment variables we pushed into the guest machine earlier. Note that I hardcode the IPs to <code>127.0.0.1</code> on the host and <code>10.0.2.2</code> on the guest, because they're the defaults -- you can change them, or make them configurable if you want. Now we can run Guard in the guest machine like so:</p>
+
+<p><code>ruby
+bundle exec rake guard:remote
+</code></p>
+
+<p>Much better.</p>
+
+<h3>The front end</h3>
+
+<p>We don't only develop Rails apps though. We also have a burgeoning front-end estate, and for that we use <a href="http://npmjs.com">npm</a>, <a href="http://browserify.org">Browserify</a> and <a href="http://karma-runner.github.io">Karma</a>, among other things. These all present their own issues. Firstly, as far as file-watching goes, we're stuck with polling on the front end. To my knowledge, none of the JS filewatching solutions provide anything out-of-the-box like Listen's network forwarding, so if you're using <a href="https://github.com/substack/watchify">Watchify</a> to run incremental Browserify builds,
+make sure to pass the <code>poll</code> option (see the Watchify docs). Continuous testing with Karma defaults to polling automatically, as does live reloading with <a href="http://www.browsersync.io">Browsersync</a>. There is one big headache remaining though.</p>
+
+<h2>npm</h2>
+
+<p>When we started using npm and Browserify to build our front-end projects, we were, ah, <em>dismayed</em> by how long it took to run a complete <code>npm install</code>. The turnaround could be minutes -- sometimes double figures of minutes -- which made any change in dependencies agonising. To boot, it quite often hung or failed entirely. We entertained a few potential solutions (running a local caching server, adjusting the npm cache settings e.g.) before we noticed something odd.</p>
+
+<h3>nfs</h3>
+
+<p>A new front-end developer we'd taken on wasn't using Vagrant, and had resisted switching to it. It turned out that his resistance was owing to how long it took for <code>npm install</code> runs to complete. Because <em>on his host machine</em>, they were <em>fast</em>. Where our runs would take 7 minutes, his took <em>40 seconds</em>. So it was immediately apparent that the problem wasn't just npm -- it was Vagrant, too (or to be more accurate, VirtualBox).</p>
+
+<p>We did a bit of research into what the problem could be, and it occurred to me that some time ago when I'd been trying to get Guard to work, I'd read about using <a href="https://www.freebsd.org/doc/handbook/network-nfs.html">nfs</a> rather than the default VirtualBox filesystem to share folders between host and guest. Using nfs had caused more problems than it seemed to solve, so I gave up, but I recalled during that research I'd read some Vagrant users suggesting that the VirtualBox filesystem could be slow for certain operations. So we tried nfs again. Bam: 40-second npm runs.</p>
+
+<p>It turns out that VirtualBox Shared Folders (<code>vboxsf</code>), the default filesystem when using VirtualBox with Vagrant, is <em>extremely</em> slow for almost all operations (see e.g. <a href="http://mitchellh.com/comparing-filesystem-performance-in-virtual-machines">http://mitchellh.com/comparing-filesystem-performance-in-virtual-machines</a>). With a tool like npm, which in the course of an install reads and writes thousands of files, this is disastrous. We'd never noticed the issue in our Rails apps, using Bundler, but npm's architecture (which installs a full copy of every subdependency in the tree), combined with the Javascript fashion for lots of very small modules, was enough to bring the deficiencies of <code>vboxsf</code> to a very noticeable light.</p>
+
+<p>Just switching to nfs, though, wasn't enough to solve all our problems. When I'd used it before, I'd had issues with unwanted caching (files not appearing to change in the guest machine when changed on the host). So we had to do a bit more research to figure out how to tweak the nfs setup to suit. This is what we ended up with:</p>
+
+<p>```ruby</p>
+
+<h1>VirtualBox needs this to use nfs</h1>
+
+<p>config.vm.network "private_network", type: "dhcp"
+config.vm.synced_folder ".", nfs: true,
+  mount_options: %w{nolock,vers=3,udp,noatime,actimeo=1}
+```</p>
+
+<p>Note the <code>mount_options</code> parameter: this passes the given array as arguments to the command Vagrant uses to start nfs. Here's what they do:</p>
+
+<ul>
+<li><code>nolock</code> prevents the guest and host filesystems from sharing file locking information. It's a workaround to allow the use of older nfs servers -- we found it necessary to enable sharing between our Ubuntu 12 guests and OS X hosts.</li>
+<li><code>vers=3</code> forces the version of nfs server to use. Again we found this necessary, but you may not.</li>
+<li><code>udp</code> forces the use of udp rather than tcp, which we found gave a performance boost.</li>
+<li><code>noatime</code> prevents the modification of the last-updated timestamp on files, which again gives a performance boost.</li>
+<li><code>actimeo=1</code> sets the caching timeout to one second, which fixed the issues we were having with unwanted caching.</li>
+</ul>
+
+
+<p>When the Vagrant machine is started or cycled, you may be asked for your password, because Vagrant has to modify the <code>/etc/exports</code> file on your host system to enable the share. Otherwise, this setup works well for us -- we get fast npm runs and file watches that don't completely pin the guest cpu.</p>
+
+<h2>Finally</h2>
+
+<p>This way of doing dev work is still fairly immature, and we've had to find our own solutions to the problems it poses. There are still things that don't work -- something like <a href="https://github.com/dgutov/robe">Robe</a> for example, which can run a Ruby process and use it to provide code completion and navigation, has so far been too difficult to get working across the host/guest boundary.</p>
+
+<p>That's a nice-to-have though; the benefits of working this way make it more than worthwhile to work on solutions to the problems.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a (fairly) sane dev environment in Windows]]></title>
@@ -670,88 +864,6 @@ is highly optimised, and has a (reasonably)
 seems to be becoming the
 <a href="http://saviorodrigues.wordpress.com/2011/01/28/rethinking-rubys-role-in-the-cloud/">language of the Cloud</a>. Perhaps
 we are doomed to, or blessed with, a pluralistic future.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Async sequences using jQuery.Deferred]]></title>
-    <link href="http://rdallasgray.github.io/blog/2013/04/27/async-sequences-using-jquery-dot-deferred/"/>
-    <updated>2013-04-27T12:18:00+01:00</updated>
-    <id>http://rdallasgray.github.io/blog/2013/04/27/async-sequences-using-jquery-dot-deferred</id>
-    <content type="html"><![CDATA[<p>At work, I've been coding on a project which has to wrangle a lot of
-asynchronous processes. At first, I stuck with the Node.js convention
-of using callbacks accepting <code>(error, data)</code> arguments, but I found
-that tended to make the code a little circuitous. As the project
-in question would largely be used on the front-end, I didn't feel I
-really had to stick to those conventions, so I looked into
-<a href="http://api.jquery.com/category/deferred-object/">jQuery's Deferred object</a>,
-and especially its use of <a href="http://api.jquery.com/promise/">promises</a>.</p>
-
-<p>This isn't a post about promises, so I won't go too deeply into what
-they are, but suffice to say they offer an alternative way to manage
-asynchrony, with an arguably cleaner syntax; the <code>Deferred</code> object
-also simplifies chaining asynchronous functions, and provides a way to
-signal when a group of functions has completed (when their <code>deferred</code>s
-have <code>resolve</code>d, in the parlance). This is
-<a href="http://api.jquery.com/jQuery.when/">jQuery.when</a>.</p>
-
-<p><code>when</code> is very useful; you pass it some functions (each of which must call
-<code>Deferred.resolve</code> on completion), and it tells you when they're all
-complete. Only problem is that the functions are called in
-parallel. Now, as a default behaviour, this makes perfect sense: we
-are talking about asynchrony after all. But in some cases, we want to
-ensure that our functions execute in a particular sequence, each
-function awaiting the completion of its
-predecessor. <code>jQuery.Deferred</code>, so far as I was able to find out,
-doesn't provide for such a use case.</p>
-
-<p>There are of course other libraries which <em>do</em> --
-<a href="https://github.com/caolan/async">Async.js</a>, for example -- but I'd
-thrown in my lot with jQuery, and I was reluctant to import a
-whole library for just this small and apparently simple piece of
-functionality.</p>
-
-<p>Now, at work, we're lucky enough to be using
-<a href="http://coffeescript.org">CoffeeScript</a> for almost all our
-Javascript-y business, and the solution to my problem turned out to be
-quite a beautiful little five-liner:</p>
-
-<p>```coffeescript
-sequence = (tasks) ->
-  seq = tasks<a href="">0</a>
-  for task, i in tasks[1..]</p>
-
-<pre><code>seq = do (i) -&gt; seq.then -&gt; tasks[i + 1]()
-</code></pre>
-
-<p>  seq
-```</p>
-
-<p>So, what's happening here? Well, we pass an array of tasks (functions
-which implement <code>Deferred.resolve</code>, and return a <code>promise</code>) to <code>sequence</code>. Sequence then
-executes the <em>first</em> task, and iterates over the rest, each time
-calling <code>Deferred.then</code> on the new value of <code>seq</code>; the function passed
-to <code>then</code> calls the next task, which returns a <code>promise</code>, and so
-on. The sequence itself is returned; this value is in fact also a
-<code>promise</code> -- the one returned by the last function in the sequence --
-which allows you to act on the sequence's completion.</p>
-
-<p>Note the use of CoffeeScript's <code>do</code> keyword, which creates an
-immediately-executing function. This is necessary to preserve the
-scope of the index variable in the function passed to <code>then</code>;
-were we not to enclose the call to <code>then</code> in an outer function, <code>i</code>
-would remain scoped to the <code>i</code> given in the loop declaration. When the
-function using <code>i</code> was called, it would of course take the value of <code>i</code>
-<em>at the time of being called</em>, not at the time of the function's
-creation -- which value is most likely to be the value of <code>i</code> at the
-end of the loop.</p>
-
-<p>Of course, the simplicity of this code is bought at the expense of
-error handling, of which there's none: you'd at least want to check
-you had an array of length > 0, to avoid exceptions, and it would make
-sense to avoid the iteration altogether if the array were only of
-length 1. Nevertheless, I think it's a nice demonstration of both
-CoffeeScript's concision and <code>$.Deferred</code>'s flexibility.</p>
 ]]></content>
   </entry>
   

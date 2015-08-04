@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Lessons in developing with Vagrant - Automatic Coding</title>
+  <meta name="author" content="Robert Dallas Gray">
+
+  
+  <meta name="description" content="At work, we use Vagrant to create and manage development environments. Once you&#8217;ve experienced working like this, you probably won&#8217;t want &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Automatic Coding" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automatic Coding</a></h1>
+  
+    <h2>Thoughts on programming, software engineering, and Emacs</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:rdallasgray.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Lessons in developing with Vagrant</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-03T09:51:00+01:00" pubdate data-updated="true">Aug 3<span>rd</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>At work, we use <a href="http://vagrantup.com">Vagrant</a> to create and manage development environments. Once you&#8217;ve experienced working like this, you probably won&#8217;t want to work the &#8216;old&#8217; way ever again (I&#8217;ve begun to transition my personal projects to using Vagrant now, too). Having each project come with its own complete, isolated environment allows any developer to pick it up and work on it immediately; it also makes deployment a part of the development process, as each provisioning run of the Vagrant VM is effectively a miniature deployment in itself. When the project is to be deployed to a staging or production environment, you can use much the same tried and tested processes to do so (we use <a href="http://www.chef.io">Chef</a>).</p>
+
+<p>From what I&#8217;m hearing and reading, more and more developers are working like this, but it&#8217;s still not a particularly well-understood way of doing things. The usual way it&#8217;s done is that your editor and tools live on your host machine, you interact with the project code on the guest machine using a shared folder, and you run tests and other development processes on the guest machine via ssh.</p>
+
+<p>Sounds pretty straightforward, but there are some subtle problems. One is filesystem events, which don&#8217;t work as they normally would.</p>
+
+<h2>Watching the filesystem</h2>
+
+<p>In most modern operating systems, there&#8217;s some kind of mechanism for a process to receive notifications when files change. In Linux it&#8217;s <a href="http://man7.org/linux/man-pages/man7/inotify.7.html">inotify</a>, for example. These mechanisms allow processes to watch a set of files for changes without <em>polling</em> the filesystem (i.e. repeatedly checking the modification times of the watched files). Because they work natively, and without polling, they&#8217;re very fast.</p>
+
+<p>In the standard Vagrant development setup, though, you&#8217;re making changes to the files on the <em>host</em> machine, but running the watching processes in the <em>guest</em> machine. And unfortunately that means that mechanisms like <code>inotify</code> don&#8217;t work.</p>
+
+<p>If you use <a href="https://github.com/guard/guard">Guard</a>, for example, to run tests in a Ruby app when files change, it uses <a href="https://github.com/guard/listen">Listen</a> to watch the filesystem. Listen ships with adaptors for many different notification systems, including a fallback polling adaptor. Until quite recently, the only way to use Guard inside a Vagrant VM was to use the polling adaptor &#8211; which is very slow, and very resource-intensive. Polling the files in a decent-sized Rails app at an interval of 1 second will most likely pin the CPU of the guest machine; also, in my experience it just wasn&#8217;t reliable (changes often wouldn&#8217;t seem to be noticed, or would be noticed late).</p>
+
+<p>If you&#8217;re using something like <a href="http://github.com/guard/guard-rspec">guard-rspec</a> to do continuous TDD, for instance, then having to repeatedly nudge the filesystem to pick up changes, and wait several seconds for them to be picked up, becomes, well, painful. There&#8217;s a way round this, though: Listen and Guard provide a way to listen to filesystem events in one machine and forward the events to another machine over the network. I won&#8217;t describe this in detail, because <a href="http://jamie.ideasasylum.com/2014/02/efficiently-using-guard-vagrant-rails-development/">it&#8217;s been done elsewhere</a>.</p>
+
+<p>There are a couple of niggling inconveniences with this solution, though. Firstly, it&#8217;s just cumbersome: You need to start a <code>listen</code> process on your host machine, then start a <code>guard</code> process on your guest machine, and then remember to shut them both down when you&#8217;re done. In a traditional setup you just run <code>guard</code> and away you go.</p>
+
+<p>Secondly, the <code>guard</code> process needs to know the full path to the watched directory <em>on the host machine</em>, which means it&#8217;s hard to make the setup portable (it&#8217;s a near certainty that the path will be different for every developer on the project).</p>
+
+<h3>vagrant-triggers</h3>
+
+<p>Enter <a href="https://github.com/emyl/vagrant-triggers">vagrant-triggers</a>, which lets you do arbitrary stuff around the lifecycle events of a Vagrant VM. We can use this to start and stop <code>listen</code> on the host machine for us, which solves issue one. And we can set up some environment variables inside the guest machine to solve problem two. Let&#8217;s do that first.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># In Vagrantfile:</span>
+</span><span class='line'><span class="no">LISTEN_PORT</span> <span class="o">=</span> <span class="mi">4000</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="ss">:forwarded_port</span><span class="p">,</span> <span class="ss">guest</span><span class="p">:</span> <span class="no">LISTEN_PORT</span><span class="p">,</span> <span class="ss">host</span><span class="p">:</span> <span class="no">LISTEN_PORT</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="ss">:shell</span><span class="p">,</span> <span class="ss">inline</span><span class="p">:</span> <span class="o">&lt;&lt;-</span><span class="no">END</span>
+</span><span class='line'><span class="sh">echo &quot;export HOST_ROOT=#{File.dirname(__FILE__)}&quot; &gt; /etc/profile.d/host_root.sh</span>
+</span><span class='line'><span class="sh">echo &quot;export LISTEN_PORT=#{LISTEN_PORT}&quot; &gt; /etc/profile.d/listen_port.sh</span>
+</span><span class='line'><span class="no">END</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That creates the environment variables <code>HOST_ROOT</code> and <code>LISTEN_PORT</code> in the guest machine, and forwards <code>LISTEN_PORT</code> to the guest. Next we create a couple of simple functions in the Vagrantfile:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">stop_listen_script</span>
+</span><span class='line'>  <span class="n">listen_exe</span> <span class="o">=</span> <span class="sb">`which listen`</span><span class="o">.</span><span class="n">chomp</span>
+</span><span class='line'>  <span class="n">ps</span> <span class="o">=</span> <span class="sb">`ps aux | grep &#39;</span><span class="si">#{</span><span class="n">listen_exe</span><span class="si">}</span><span class="sb">&#39;`</span>
+</span><span class='line'>    <span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/\w*\s+(\d+)\s+.*127\.0\.0\.1:</span><span class="si">#{</span><span class="no">LISTEN_PORT</span><span class="si">}</span><span class="sr">/</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">ps</span> <span class="o">&amp;&amp;</span> <span class="n">ps</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span><span class="p">))</span>
+</span><span class='line'>    <span class="s2">&quot;kill </span><span class="si">#{</span><span class="n">pid</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="s2">&quot;true&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">start_listen_script</span>
+</span><span class='line'>  <span class="s2">&quot;listen -f 127.0.0.1:</span><span class="si">#{</span><span class="no">LISTEN_PORT</span><span class="si">}</span><span class="s2"> &gt; /dev/null 2&gt;&amp;1 &amp;&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>start_listen_script</code> starts <code>listen</code> and forwards change notifications to <code>LISTEN_PORT</code>; because we&#8217;ve forwarded that port to the guest machine, the guest machine will receive the notifications.</p>
+
+<p><code>stop_listen_script</code> checks for a running process in the host machine which matches the <code>listen</code> executable and arguments, and if it finds one, kills it. We need to do this so that Vagrant can run its lifecycle operations correctly, and so we don&#8217;t end up with lots of orphan <code>listen</code> processes.</p>
+
+<p>Now we&#8217;re almost ready to create some triggers, but we need to make some additional gems available to Vagrant. Run the following in your host machine:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">vagrant</span> <span class="n">plugin</span> <span class="n">install</span> <span class="n">celluloid</span><span class="o">-</span><span class="n">io</span> <span class="o">&amp;&amp;</span> <span class="n">vagrant</span> <span class="n">plugin</span> <span class="n">install</span> <span class="n">thor</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://github.com/celluloid/celluloid-io">celluloid-io</a> and <a href="https://github.com/erikhuda/thor">thor</a> are necessary for <code>listen</code> to work correctly when started as part of Vagrant&#8217;s lifecycle (interesting to note here that <code>vagrant plugin install</code> is just <code>gem install</code> in disguise &#8211; it can make arbitrary gems available to Vagrant).</p>
+
+<p>Next we need to make sure <code>listen</code> is available on our host machine:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="n">install</span> <span class="n">listen</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And finally install <code>vagrant-triggers</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">vagrant</span> <span class="n">plugin</span> <span class="n">install</span> <span class="n">vagrant</span><span class="o">-</span><span class="n">triggers</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we can create the following triggers in our Vagrantfile:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Stop listen whenever we shut down or re-forward ports (a running listen</span>
+</span><span class='line'><span class="c1"># will prevent port forwarding).</span>
+</span><span class='line'><span class="o">[</span><span class="ss">:up</span><span class="p">,</span> <span class="ss">:resume</span><span class="p">,</span> <span class="ss">:suspend</span><span class="p">,</span> <span class="ss">:halt</span><span class="p">,</span> <span class="ss">:destroy</span><span class="p">,</span> <span class="ss">:reload</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">cmd</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">before</span> <span class="n">cmd</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">run</span> <span class="n">stop_listen_script</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Start listen when we start the machine</span>
+</span><span class='line'><span class="o">[</span><span class="ss">:up</span><span class="p">,</span> <span class="ss">:resume</span><span class="p">,</span> <span class="ss">:reload</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">cmd</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">after</span> <span class="n">cmd</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">run</span> <span class="n">start_listen_script</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That will start <code>listen</code> on the host when we bring our VM up, and stop <code>listen</code> when we take it down or cycle it. All we need now is a way to properly run <code>guard</code> inside the guest machine, picking up the correct watch directory and ports. We can do that in our project&#8217;s Rakefile:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">namespace</span> <span class="ss">:guard</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">desc</span> <span class="s2">&quot;Start guard, listening for changes on a given port at the default gateway&quot;</span>
+</span><span class='line'>  <span class="n">task</span> <span class="ss">:remote</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;guard --clear -o &#39;10.0.2.2:</span><span class="si">#{</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;LISTEN_PORT&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">&#39; -w &#39;</span><span class="si">#{</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOST_ROOT&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+</span><span class='line'>    <span class="nb">system</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That works thanks to the environment variables we pushed into the guest machine earlier. Note that I hardcode the IPs to <code>127.0.0.1</code> on the host and <code>10.0.2.2</code> on the guest, because they&#8217;re the defaults &#8211; you can change them, or make them configurable if you want. Now we can run Guard in the guest machine like so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">bundle</span> <span class="nb">exec</span> <span class="n">rake</span> <span class="ss">guard</span><span class="p">:</span><span class="n">remote</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Much better.</p>
+
+<h3>The front end</h3>
+
+<p>We don&#8217;t only develop Rails apps though. We also have a burgeoning front-end estate, and for that we use <a href="http://npmjs.com">npm</a>, <a href="http://browserify.org">Browserify</a> and <a href="http://karma-runner.github.io">Karma</a>, among other things. These all present their own issues. Firstly, as far as file-watching goes, we&#8217;re stuck with polling on the front end. To my knowledge, none of the JS filewatching solutions provide anything out-of-the-box like Listen&#8217;s network forwarding, so if you&#8217;re using <a href="https://github.com/substack/watchify">Watchify</a> to run incremental Browserify builds,
+make sure to pass the <code>poll</code> option (see the Watchify docs). Continuous testing with Karma defaults to polling automatically, as does live reloading with <a href="http://www.browsersync.io">Browsersync</a>. There is one big headache remaining though.</p>
+
+<h2>npm</h2>
+
+<p>When we started using npm and Browserify to build our front-end projects, we were, ah, <em>dismayed</em> by how long it took to run a complete <code>npm install</code>. The turnaround could be minutes &#8211; sometimes double figures of minutes &#8211; which made any change in dependencies agonising. To boot, it quite often hung or failed entirely. We entertained a few potential solutions (running a local caching server, adjusting the npm cache settings e.g.) before we noticed something odd.</p>
+
+<h3>nfs</h3>
+
+<p>A new front-end developer we&#8217;d taken on wasn&#8217;t using Vagrant, and had resisted switching to it. It turned out that his resistance was owing to how long it took for <code>npm install</code> runs to complete. Because <em>on his host machine</em>, they were <em>fast</em>. Where our runs would take 7 minutes, his took <em>40 seconds</em>. So it was immediately apparent that the problem wasn&#8217;t just npm &#8211; it was Vagrant, too (or to be more accurate, VirtualBox).</p>
+
+<p>We did a bit of research into what the problem could be, and it occurred to me that some time ago when I&#8217;d been trying to get Guard to work, I&#8217;d read about using <a href="https://www.freebsd.org/doc/handbook/network-nfs.html">nfs</a> rather than the default VirtualBox filesystem to share folders between host and guest. Using nfs had caused more problems than it seemed to solve, so I gave up, but I recalled during that research I&#8217;d read some Vagrant users suggesting that the VirtualBox filesystem could be slow for certain operations. So we tried nfs again. Bam: 40-second npm runs.</p>
+
+<p>It turns out that VirtualBox Shared Folders (<code>vboxsf</code>), the default filesystem when using VirtualBox with Vagrant, is <em>extremely</em> slow for almost all operations (see e.g. <a href="http://mitchellh.com/comparing-filesystem-performance-in-virtual-machines">http://mitchellh.com/comparing-filesystem-performance-in-virtual-machines</a>). With a tool like npm, which in the course of an install reads and writes thousands of files, this is disastrous. We&#8217;d never noticed the issue in our Rails apps, using Bundler, but npm&#8217;s architecture (which installs a full copy of every subdependency in the tree), combined with the Javascript fashion for lots of very small modules, was enough to bring the deficiencies of <code>vboxsf</code> to a very noticeable light.</p>
+
+<p>Just switching to nfs, though, wasn&#8217;t enough to solve all our problems. When I&#8217;d used it before, I&#8217;d had issues with unwanted caching (files not appearing to change in the guest machine when changed on the host). So we had to do a bit more research to figure out how to tweak the nfs setup to suit. This is what we ended up with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># VirtualBox needs this to use nfs</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="s2">&quot;private_network&quot;</span><span class="p">,</span> <span class="ss">type</span><span class="p">:</span> <span class="s2">&quot;dhcp&quot;</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">synced_folder</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="ss">nfs</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">mount_options</span><span class="p">:</span> <span class="sx">%w{nolock,vers=3,udp,noatime,actimeo=1}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note the <code>mount_options</code> parameter: this passes the given array as arguments to the command Vagrant uses to start nfs. Here&#8217;s what they do:</p>
+
+<ul>
+<li><code>nolock</code> prevents the guest and host filesystems from sharing file locking information. It&#8217;s a workaround to allow the use of older nfs servers &#8211; we found it necessary to enable sharing between our Ubuntu 12 guests and OS X hosts.</li>
+<li><code>vers=3</code> forces the version of nfs server to use. Again we found this necessary, but you may not.</li>
+<li><code>udp</code> forces the use of udp rather than tcp, which we found gave a performance boost.</li>
+<li><code>noatime</code> prevents the modification of the last-updated timestamp on files, which again gives a performance boost.</li>
+<li><code>actimeo=1</code> sets the caching timeout to one second, which fixed the issues we were having with unwanted caching.</li>
+</ul>
+
+
+<p>When the Vagrant machine is started or cycled, you may be asked for your password, because Vagrant has to modify the <code>/etc/exports</code> file on your host system to enable the share. Otherwise, this setup works well for us &#8211; we get fast npm runs and file watches that don&#8217;t completely pin the guest cpu.</p>
+
+<h2>Finally</h2>
+
+<p>This way of doing dev work is still fairly immature, and we&#8217;ve had to find our own solutions to the problems it poses. There are still things that don&#8217;t work &#8211; something like <a href="https://github.com/dgutov/robe">Robe</a> for example, which can run a Ruby process and use it to provide code completion and navigation, has so far been too difficult to get working across the host/guest boundary.</p>
+
+<p>That&#8217;s a nice-to-have though; the benefits of working this way make it more than worthwhile to work on solutions to the problems.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Robert Dallas Gray</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-03T09:51:00+01:00" pubdate data-updated="true">Aug 3<span>rd</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/programming/'>programming</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant/" data-via="rdallasgray" data-counturl="http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/" title="Previous Post: Building a (fairly) sane dev environment in Windows">&laquo; Building a (fairly) sane dev environment in Windows</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/08/03/lessons-in-developing-with-vagrant/">Lessons in developing with Vagrant</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/28/building-a-fairly-sane-dev-environment-in-windows/">Building a (fairly) sane dev environment in Windows</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/27/some-technical-podcasts-i-listen-to/">Some technical podcasts I listen to</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/06/09/whats-wrong-with-javascript/">What's wrong with JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/11/mod-lang/">Mod Lang</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/rdallasgray">@rdallasgray</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'rdallasgray',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Robert Dallas Gray -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'automaticcoding';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant/';
+        var disqus_url = 'http://rdallasgray.github.io/blog/2015/08/03/lessons-in-developing-with-vagrant/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
